@@ -1,0 +1,751 @@
+// lib/dashboard.dart
+import 'package:flutter/material.dart';
+
+// -------------------- Models & Mock Data --------------------
+
+class UserInfo {
+  final String name;
+  final String role;
+  final String email;
+
+  UserInfo({required this.name, required this.role, required this.email});
+}
+
+class WorkOrder {
+  final String id;
+  final String title;
+  final String details;
+  final String location;
+  final String aircraft;
+  final String status; // Open, In Progress, Completed, Overdue, Pending Approval
+  final DateTime createdAt;
+
+  WorkOrder({
+    required this.id,
+    required this.title,
+    required this.details,
+    required this.location,
+    required this.aircraft,
+    required this.status,
+    required this.createdAt,
+  });
+}
+
+final List<WorkOrder> _mockWorkOrders = [
+  WorkOrder(
+    id: 'WO-22745',
+    title: 'Emirates EK 650 - Service Request',
+    details: '22745 • Gate A12',
+    location: 'Gate A12',
+    aircraft: 'A330',
+    status: 'In Progress',
+    createdAt: DateTime.now().subtract(const Duration(hours: 4)),
+  ),
+  WorkOrder(
+    id: 'WO-22746',
+    title: 'SriLankan UL 504 - Service Request',
+    details: '22746 • Gate B07',
+    location: 'Gate B07',
+    aircraft: 'A350',
+    status: 'Open',
+    createdAt: DateTime.now().subtract(const Duration(days: 1)),
+  ),
+  WorkOrder(
+    id: 'WO-2025-001',
+    title: 'GPU Maintenance - Terminal A',
+    details: 'WO-2025-001',
+    location: 'Terminal A',
+    aircraft: 'Ground Equipment',
+    status: 'In Progress',
+    createdAt: DateTime.now().subtract(const Duration(days: 2)),
+  ),
+  WorkOrder(
+    id: 'ASD-240815-001',
+    title: 'EK 650 - Needs Approval',
+    details: 'ASD-240815-001 • High Priority',
+    location: 'Gate A12',
+    aircraft: 'A330',
+    status: 'Pending Approval',
+    createdAt: DateTime.now().subtract(const Duration(hours: 8)),
+  ),
+];
+
+final Map<String, int> _dashboardStats = {
+  'totalWorkOrders': 25,
+  'openWorkOrders': 8,
+  'inProgress': 5,
+  'completedToday': 3,
+  'overdue': 2,
+  'pendingApproval': 4,
+};
+
+final List<Map<String, int>> _chartData = [
+  {'name': 'Mon', 'completed': 4, 'created': 2},
+  {'name': 'Tue', 'completed': 3, 'created': 5},
+  {'name': 'Wed', 'completed': 6, 'created': 3},
+  {'name': 'Thu', 'completed': 2, 'created': 4},
+  {'name': 'Fri', 'completed': 5, 'created': 6},
+  {'name': 'Sat', 'completed': 3, 'created': 2},
+  {'name': 'Sun', 'completed': 1, 'created': 1},
+];
+
+// -------------------- Dashboard Page --------------------
+
+enum DashboardView { overview, workOrders, createWorkOrder }
+
+class DashboardPage extends StatefulWidget {
+  final VoidCallback onLogout;
+  final VoidCallback? onNavigateToNewWorkOrder;
+  final VoidCallback? onNavigateToApproval;
+  final UserInfo? currentUser;
+
+  const DashboardPage({
+    Key? key,
+    required this.onLogout,
+    this.onNavigateToNewWorkOrder,
+    this.onNavigateToApproval,
+    this.currentUser,
+  }) : super(key: key);
+
+  @override
+  State<DashboardPage> createState() => _DashboardPageState();
+}
+
+class _DashboardPageState extends State<DashboardPage> {
+  DashboardView _currentView = DashboardView.overview;
+
+  // local list simulating source of truth for this demo
+  List<WorkOrder> _workOrders = List.from(_mockWorkOrders);
+
+  void _goToCreate() => setState(() => _currentView = DashboardView.createWorkOrder);
+  void _goToWorkOrders() => setState(() => _currentView = DashboardView.workOrders);
+  void _goToOverview() => setState(() => _currentView = DashboardView.overview);
+
+  void _saveWorkOrder(WorkOrder wo) {
+    setState(() {
+      _workOrders.insert(0, wo);
+      _currentView = DashboardView.workOrders;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    Widget content;
+    switch (_currentView) {
+      case DashboardView.workOrders:
+        content = WorkOrdersList(
+          workOrders: _workOrders,
+          onCreateNew: () {
+            _goToCreate();
+          },
+        );
+        break;
+      case DashboardView.createWorkOrder:
+        content = CreateWorkOrder(
+          onBack: _goToWorkOrders,
+          onSave: (wo) => _saveWorkOrder(wo),
+        );
+        break;
+      case DashboardView.overview:
+      default:
+        content = _buildOverview();
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.grey[50],
+      appBar: DashboardHeader(onLogout: widget.onLogout),
+      body: Column(
+        children: [
+          // Navigation (mimicking the nav buttons)
+          Material(
+            color: Colors.white,
+            elevation: 1,
+            child: SizedBox(
+              height: 56,
+              child: Row(
+                children: [
+                  const SizedBox(width: 16),
+                  _NavButton(
+                    label: 'Dashboard Overview',
+                    selected: _currentView == DashboardView.overview,
+                    onTap: _goToOverview,
+                  ),
+                  const SizedBox(width: 8),
+                  _NavButton(
+                    label: 'Work Orders',
+                    selected: _currentView == DashboardView.workOrders || _currentView == DashboardView.createWorkOrder,
+                    onTap: _goToWorkOrders,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Main content
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+              child: content,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOverview() {
+    final user = widget.currentUser;
+    final pendingApproval = _dashboardStats['pendingApproval'] ?? 0;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // Welcome / CTA section
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(colors: [Color(0xFFFFF1F2), Colors.white]),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.red.shade100),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('Welcome to Service Operations', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: Color(0xFF7F1D1D))),
+                    const SizedBox(height: 6),
+                    const Text('Monitor and manage airport ground service operations efficiently.', style: TextStyle(color: Colors.grey)),
+                    if (user != null) ...[
+                      const SizedBox(height: 6),
+                      Text('Logged in as: ${user.name} (${user.role})', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                    ],
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  if (widget.onNavigateToNewWorkOrder != null)
+                    ElevatedButton.icon(
+                      onPressed: widget.onNavigateToNewWorkOrder,
+                      icon: const Icon(Icons.add),
+                      label: const Text('New Work Order'),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade600),
+                    ),
+                  const SizedBox(height: 8),
+                  if ((user?.role ?? '').contains('Supervisor') && widget.onNavigateToApproval != null && pendingApproval > 0)
+                    ElevatedButton.icon(
+                      onPressed: widget.onNavigateToApproval,
+                      icon: const Icon(Icons.edit),
+                      label: Row(
+                        children: [
+                          const Text('Approve Work Orders'),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+                            child: Text('$pendingApproval', style: const TextStyle(color: Colors.orange)),
+                          ),
+                        ],
+                      ),
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.orange.shade600),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Stats cards grid (responsive-like)
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          children: [
+            _StatCard(
+              title: 'Total Work Orders',
+              value: '${_dashboardStats['totalWorkOrders']}',
+              icon: Icons.build,
+              bg: Colors.blue.shade50,
+            ),
+            _StatCard(
+              title: 'Open',
+              value: '${_dashboardStats['openWorkOrders']}',
+              icon: Icons.schedule,
+              bg: Colors.yellow.shade50,
+            ),
+            _StatCard(
+              title: 'In Progress',
+              value: '${_dashboardStats['inProgress']}',
+              icon: Icons.trending_up,
+              bg: Colors.orange.shade50,
+            ),
+            _StatCard(
+              title: 'Completed Today',
+              value: '${_dashboardStats['completedToday']}',
+              icon: Icons.check_circle,
+              bg: Colors.green.shade50,
+            ),
+            _StatCard(
+              title: 'Overdue',
+              value: '${_dashboardStats['overdue']}',
+              icon: Icons.warning_amber,
+              bg: Colors.red.shade50,
+            ),
+            if ((user?.role ?? '') == 'Supervisor')
+              _StatCard(
+                title: 'Pending Approval',
+                value: '${_dashboardStats['pendingApproval']}',
+                icon: Icons.done_all,
+                bg: Colors.purple.shade50,
+              ),
+          ],
+        ),
+        const SizedBox(height: 16),
+
+        // Charts and recent activity
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Chart
+            Expanded(
+              flex: 1,
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    children: [
+                      Row(children: const [
+                        Icon(Icons.calendar_today, color: Colors.red),
+                        SizedBox(width: 8),
+                        Text('Weekly Activity', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ]),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        height: 200,
+                        child: CustomBarChart(chartData: _chartData),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            // Recent Work Orders
+            Expanded(
+              flex: 1,
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    children: [
+                      Row(children: const [
+                        Text('Recent Work Orders', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ]),
+                      const SizedBox(height: 12),
+                      Column(
+                        children: _workOrders.take(6).map((wo) {
+                          final badgeColor = _statusColor(wo.status);
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 8),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(color: Colors.blue.shade50, borderRadius: BorderRadius.circular(8)),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Expanded(
+                                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                                    Text(wo.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                    const SizedBox(height: 4),
+                                    Text(wo.details, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                                  ]),
+                                ),
+                                const SizedBox(width: 12),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(color: badgeColor.withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
+                                  child: Text(wo.status, style: TextStyle(color: badgeColor)),
+                                ),
+                              ],
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      if ((widget.currentUser?.role ?? '') == 'Supervisor')
+                        InkWell(
+                          onTap: widget.onNavigateToApproval,
+                          child: Container(
+                            margin: const EdgeInsets.only(top: 8),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(color: Colors.purple.shade50, borderRadius: BorderRadius.circular(8)),
+                            child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: const [
+                              Text('Emirates EK 650 - Needs Approval', style: TextStyle(fontWeight: FontWeight.w600)),
+                              Text('Pending Approval', style: TextStyle(color: Colors.purple)),
+                            ]),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+// -------------------- Header, NavButton, StatCard --------------------
+
+class DashboardHeader extends StatelessWidget implements PreferredSizeWidget {
+  final VoidCallback onLogout;
+
+  const DashboardHeader({Key? key, required this.onLogout}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      title: Row(children: const [
+        Icon(Icons.build, color: Colors.white),
+        SizedBox(width: 8),
+        Text('Service Operations'),
+      ]),
+      actions: [
+        TextButton.icon(onPressed: onLogout, icon: const Icon(Icons.logout, color: Colors.white), label: const Text('Logout', style: TextStyle(color: Colors.white))),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+}
+
+class _NavButton extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _NavButton({Key? key, required this.label, required this.selected, required this.onTap}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected ? Colors.red.shade600 : Colors.grey.shade600;
+    final border = selected ? Border(bottom: BorderSide(color: Colors.red.shade500, width: 2)) : null;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(border: border),
+        alignment: Alignment.center,
+        child: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.w600)),
+      ),
+    );
+  }
+}
+
+class _StatCard extends StatelessWidget {
+  final String title;
+  final String value;
+  final IconData icon;
+  final Color bg;
+
+  const _StatCard({Key? key, required this.title, required this.value, required this.icon, required this.bg}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    final color = Colors.black87;
+    return SizedBox(
+      width: 180,
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(children: [
+            Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)), child: Icon(icon, color: Colors.black54)),
+            const SizedBox(width: 12),
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)), const SizedBox(height: 6), Text(value, style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: color))]),
+          ]),
+        ),
+      ),
+    );
+  }
+}
+
+// -------------------- WorkOrdersList widget --------------------
+
+class WorkOrdersList extends StatelessWidget {
+  final List<WorkOrder> workOrders;
+  final VoidCallback onCreateNew;
+
+  const WorkOrdersList({Key? key, required this.workOrders, required this.onCreateNew}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
+                Text('Work Orders', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                SizedBox(height: 4),
+                Text('List of work orders and quick actions', style: TextStyle(color: Colors.grey)),
+              ]),
+              Row(children: [
+                TextButton.icon(onPressed: () {}, icon: const Icon(Icons.download_outlined), label: const Text('Export')),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(onPressed: onCreateNew, icon: const Icon(Icons.add), label: const Text('Create Work Order')),
+              ]),
+            ]),
+          ),
+        ),
+        const SizedBox(height: 12),
+        ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: workOrders.length,
+          separatorBuilder: (_, __) => const SizedBox(height: 8),
+          itemBuilder: (context, idx) {
+            final wo = workOrders[idx];
+            return Card(
+              child: ListTile(
+                leading: CircleAvatar(child: Text(_initials(wo.title))),
+                title: Text(wo.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                subtitle: Text('${wo.details} • ${wo.aircraft}'),
+                trailing: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                  decoration: BoxDecoration(color: _statusColor(wo.status).withOpacity(0.12), borderRadius: BorderRadius.circular(8)),
+                  child: Text(wo.status, style: TextStyle(color: _statusColor(wo.status))),
+                ),
+                onTap: () {
+                  // open details or edit
+                },
+              ),
+            );
+          },
+        ),
+      ],
+    );
+  }
+}
+
+// -------------------- CreateWorkOrder widget --------------------
+
+class CreateWorkOrder extends StatefulWidget {
+  final VoidCallback onBack;
+  final ValueChanged<WorkOrder> onSave;
+
+  const CreateWorkOrder({Key? key, required this.onBack, required this.onSave}) : super(key: key);
+
+  @override
+  State<CreateWorkOrder> createState() => _CreateWorkOrderState();
+}
+
+class _CreateWorkOrderState extends State<CreateWorkOrder> {
+  final _formKey = GlobalKey<FormState>();
+  final _titleCtl = TextEditingController();
+  final _detailsCtl = TextEditingController();
+  final _locationCtl = TextEditingController();
+  final _aircraftCtl = TextEditingController();
+  String _status = 'Open';
+
+  @override
+  void dispose() {
+    _titleCtl.dispose();
+    _detailsCtl.dispose();
+    _locationCtl.dispose();
+    _aircraftCtl.dispose();
+    super.dispose();
+  }
+
+  void _onSave() {
+    if (_formKey.currentState?.validate() ?? false) {
+      final newWo = WorkOrder(
+        id: 'WO-${DateTime.now().millisecondsSinceEpoch}',
+        title: _titleCtl.text.trim(),
+        details: _detailsCtl.text.trim(),
+        location: _locationCtl.text.trim(),
+        aircraft: _aircraftCtl.text.trim(),
+        status: _status,
+        createdAt: DateTime.now(),
+      );
+      widget.onSave(newWo);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
+                Text('Create Work Order', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                SizedBox(height: 4),
+                Text('Fill details to create a new work order', style: TextStyle(color: Colors.grey)),
+              ]),
+              Row(children: [
+                TextButton(onPressed: widget.onBack, child: const Text('Back')),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(onPressed: _onSave, icon: const Icon(Icons.save), label: const Text('Save')),
+              ]),
+            ]),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Card(
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Form(
+              key: _formKey,
+              child: Column(children: [
+                TextFormField(controller: _titleCtl, decoration: const InputDecoration(labelText: 'Title'), validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null),
+                const SizedBox(height: 8),
+                TextFormField(controller: _detailsCtl, decoration: const InputDecoration(labelText: 'Details'), maxLines: 2),
+                const SizedBox(height: 8),
+                Row(children: [
+                  Expanded(child: TextFormField(controller: _locationCtl, decoration: const InputDecoration(labelText: 'Location'))),
+                  const SizedBox(width: 8),
+                  SizedBox(width: 160, child: TextFormField(controller: _aircraftCtl, decoration: const InputDecoration(labelText: 'Aircraft'))),
+                ]),
+                const SizedBox(height: 8),
+                Row(children: [
+                  const Text('Status:'),
+                  const SizedBox(width: 8),
+                  DropdownButton<String>(
+                    value: _status,
+                    items: const [
+                      DropdownMenuItem(value: 'Open', child: Text('Open')),
+                      DropdownMenuItem(value: 'In Progress', child: Text('In Progress')),
+                      DropdownMenuItem(value: 'Completed', child: Text('Completed')),
+                      DropdownMenuItem(value: 'Pending Approval', child: Text('Pending Approval')),
+                      DropdownMenuItem(value: 'Overdue', child: Text('Overdue')),
+                    ],
+                    onChanged: (v) => setState(() => _status = v ?? 'Open'),
+                  ),
+                ]),
+                const SizedBox(height: 12),
+                Row(mainAxisAlignment: MainAxisAlignment.end, children: [
+                  TextButton(onPressed: widget.onBack, child: const Text('Cancel')),
+                  const SizedBox(width: 8),
+                  ElevatedButton(onPressed: _onSave, child: const Text('Create')),
+                ]),
+              ]),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// -------------------- Custom Bar Chart (Material-only) --------------------
+
+class CustomBarChart extends StatelessWidget {
+  final List<Map<String, int>> chartData;
+
+  const CustomBarChart({Key? key, required this.chartData}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    // Compute max value for scaling
+    int maxVal = 1;
+    for (var d in chartData) {
+      maxVal = [maxVal, d['completed'] ?? 0, d['created'] ?? 0].reduce((a, b) => a > b ? a : b);
+    }
+
+    return LayoutBuilder(builder: (context, constraints) {
+      return CustomPaint(
+        size: Size(constraints.maxWidth, constraints.maxHeight),
+        painter: _BarChartPainter(chartData: chartData, maxValue: maxVal),
+      );
+    });
+  }
+}
+
+class _BarChartPainter extends CustomPainter {
+  final List<Map<String, int>> chartData;
+  final int maxValue;
+
+  _BarChartPainter({required this.chartData, required this.maxValue});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paintCompleted = Paint()..color = const Color(0xFFDC2626); // red
+    final paintCreated = Paint()..color = const Color(0xFFF87171); // light red
+    final axisPaint = Paint()..color = Colors.grey.shade300;
+    final textPainter = TextPainter(textDirection: TextDirection.ltr);
+
+    final double paddingLeft = 30;
+    final double paddingBottom = 24;
+    final double chartWidth = size.width - paddingLeft;
+    final double chartHeight = size.height - paddingBottom - 12;
+    final double columnWidth = chartWidth / chartData.length;
+    final double barGroupWidth = columnWidth * 0.6;
+    final double barWidth = barGroupWidth / 2;
+
+    // Draw horizontal grid lines
+    for (int i = 0; i <= 4; i++) {
+      final y = (chartHeight / 4) * i;
+      canvas.drawLine(Offset(paddingLeft, y), Offset(size.width, y), axisPaint);
+    }
+
+    for (int i = 0; i < chartData.length; i++) {
+      final xCenter = paddingLeft + columnWidth * i + columnWidth / 2;
+      final completed = chartData[i]['completed'] ?? 0;
+      final created = chartData[i]['created'] ?? 0;
+      final completedHeight = (completed / (maxValue == 0 ? 1 : maxValue)) * chartHeight;
+      final createdHeight = (created / (maxValue == 0 ? 1 : maxValue)) * chartHeight;
+
+      final completedRect = Rect.fromLTWH(xCenter - barGroupWidth / 2, chartHeight - completedHeight, barWidth, completedHeight);
+      final createdRect = Rect.fromLTWH(xCenter - barGroupWidth / 2 + barWidth, chartHeight - createdHeight, barWidth, createdHeight);
+
+      canvas.drawRRect(RRect.fromRectAndRadius(completedRect, const Radius.circular(4)), paintCompleted);
+      canvas.drawRRect(RRect.fromRectAndRadius(createdRect, const Radius.circular(4)), paintCreated);
+
+      // Draw label
+      final label = chartData[i]['name'] ?? '';
+      textPainter.text = TextSpan(text: label, style: const TextStyle(color: Colors.black54, fontSize: 10));
+      textPainter.layout();
+      final labelX = xCenter - textPainter.width / 2;
+      final labelY = chartHeight + 4;
+      textPainter.paint(canvas, Offset(labelX, labelY));
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _BarChartPainter oldDelegate) => oldDelegate.chartData != chartData || oldDelegate.maxValue != maxValue;
+}
+
+// -------------------- Helpers --------------------
+
+String _initials(String text) {
+  final parts = text.split(' ').where((s) => s.isNotEmpty).toList();
+  if (parts.isEmpty) return '';
+  if (parts.length == 1) return parts[0][0].toUpperCase();
+  return (parts[0][0] + parts[1][0]).toUpperCase();
+}
+
+Color _statusColor(String status) {
+  switch (status.toLowerCase()) {
+    case 'in progress':
+      return Colors.orange.shade700;
+    case 'open':
+      return Colors.blue.shade700;
+    case 'completed':
+      return Colors.green.shade700;
+    case 'pending approval':
+      return Colors.purple.shade700;
+    case 'overdue':
+      return Colors.red.shade700;
+    default:
+      return Colors.grey.shade700;
+  }
+}
