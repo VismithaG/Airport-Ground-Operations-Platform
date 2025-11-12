@@ -1,7 +1,51 @@
 import 'package:flutter/material.dart';
 import 'loginform.dart';
-import 'image_with_fallback.dart';
-import '../constants/mock_data.dart';
+
+// Minimal local company data so login page doesn't depend on missing constants file.
+const Map<String, dynamic> COMPANY_INFO = {
+  'name': 'Airport Services',
+  'tagline': 'Ground operations made simple',
+  'features': ['Work orders', 'Approvals', 'Reporting'],
+  'contact': {'support': 'it@airport.local'},
+};
+
+class ImageWithFallback extends StatelessWidget {
+  final String src;
+  final double? height;
+  final BoxFit fit;
+
+  const ImageWithFallback({
+    super.key,
+    required this.src,
+    this.height,
+    this.fit = BoxFit.cover,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.network(
+      src,
+      height: height,
+      width: double.infinity,
+      fit: fit,
+      errorBuilder: (context, error, stackTrace) => Container(
+        height: height,
+        color: Colors.grey.shade300,
+        alignment: Alignment.center,
+        child: const Icon(Icons.broken_image, size: 48, color: Colors.grey),
+      ),
+      loadingBuilder: (context, child, loadingProgress) {
+        if (loadingProgress == null) return child;
+        return Container(
+          height: height,
+          color: Colors.grey.shade200,
+          alignment: Alignment.center,
+          child: const CircularProgressIndicator(strokeWidth: 2),
+        );
+      },
+    );
+  }
+}
 
 class LoginPage extends StatelessWidget {
   final void Function({
@@ -13,15 +57,15 @@ class LoginPage extends StatelessWidget {
   final VoidCallback onDemoAdminLogin;
 
   const LoginPage({
-    Key? key,
+    super.key,
     required this.onLogin,
     required this.onDemoApproval,
     required this.onDemoAdminLogin,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
-    final company = COMPANY_INFO;
+    final Map<String, dynamic> company = COMPANY_INFO;
 
     return Scaffold(
       body: Container(
@@ -34,20 +78,15 @@ class LoginPage extends StatelessWidget {
         ),
         child: Stack(
           children: [
-            // Background pattern (faint SVG-like pattern)
             Opacity(
               opacity: 0.05,
               child: Container(
                 decoration: const BoxDecoration(
-                  image: DecorationImage(
-                    image: AssetImage('assets/pattern.png'),
-                    fit: BoxFit.cover,
-                  ),
+                  // optional: keep a pattern asset if you add it to assets later
+                  // image: DecorationImage(image: AssetImage('assets/pattern.png'), fit: BoxFit.cover),
                 ),
               ),
             ),
-
-            // Main Content
             Center(
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 1200),
@@ -82,12 +121,13 @@ class LoginPage extends StatelessWidget {
   }
 
   Widget _buildLeftPanel(BuildContext context, Map<String, dynamic> company) {
+    final features = (company['features'] as List<dynamic>?) ?? <dynamic>[];
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            company['name'],
+            company['name'] ?? '',
             style: const TextStyle(
               fontSize: 36,
               fontWeight: FontWeight.bold,
@@ -96,14 +136,14 @@ class LoginPage extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            company['tagline'],
+            company['tagline'] ?? '',
             style: const TextStyle(fontSize: 20, color: Colors.grey),
           ),
           const SizedBox(height: 24),
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: List.generate(
-              (company['features'] as List).length,
+              features.length,
               (index) => Row(
                 children: [
                   Container(
@@ -115,13 +155,12 @@ class LoginPage extends StatelessWidget {
                       shape: BoxShape.circle,
                     ),
                   ),
-                  Text(company['features'][index]),
+                  Text(features[index].toString()),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 24),
-          // Airport image
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Stack(
@@ -159,8 +198,6 @@ class LoginPage extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 24),
-
-          // Demo buttons
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -210,7 +247,7 @@ class LoginPage extends StatelessWidget {
       children: [
         const SizedBox(height: 24),
         Text(
-          company['name'],
+          company['name'] ?? '',
           style: const TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
@@ -219,7 +256,7 @@ class LoginPage extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          company['tagline'],
+          company['tagline'] ?? '',
           style: const TextStyle(color: Colors.grey),
         ),
       ],
@@ -239,9 +276,9 @@ class LoginPage extends StatelessWidget {
               border: Border.all(color: const Color(0xFFBFDBFE)),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+              children: const [
                 Text(
                   "Demo Instructions",
                   style: TextStyle(
@@ -263,11 +300,11 @@ class LoginPage extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           Text(
-            "© 2025 ${COMPANY_INFO['name']}. All rights reserved.",
+            "© 2025 ${company['name'] ?? ''}. All rights reserved.",
             style: const TextStyle(fontSize: 10, color: Colors.grey),
           ),
           Text(
-            "For technical support, contact IT services at ${COMPANY_INFO['contact']['support']}",
+            "For technical support, contact IT services at ${company['contact']?['support'] ?? ''}",
             style: const TextStyle(fontSize: 10, color: Colors.grey),
           ),
         ],
