@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'loginform.dart';
 
 // Minimal local company data so login page doesn't depend on missing constants file.
-const Map<String, dynamic> COMPANY_INFO = {
+const Map<String, dynamic> companyInfo = {
   'name': 'Airport Services',
   'tagline': 'Ground operations made simple',
   'features': ['Work orders', 'Approvals', 'Reporting'],
@@ -65,7 +65,7 @@ class LoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Map<String, dynamic> company = COMPANY_INFO;
+    final Map<String, dynamic> company = companyInfo;
 
     return Scaffold(
       body: Container(
@@ -83,7 +83,6 @@ class LoginPage extends StatelessWidget {
               child: Container(
                 decoration: const BoxDecoration(
                   // optional: keep a pattern asset if you add it to assets later
-                  // image: DecorationImage(image: AssetImage('assets/pattern.png'), fit: BoxFit.cover),
                 ),
               ),
             ),
@@ -201,7 +200,7 @@ class LoginPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withValues(alpha: 0.8),
               borderRadius: BorderRadius.circular(12),
               border: Border.all(color: Colors.red.shade200),
             ),

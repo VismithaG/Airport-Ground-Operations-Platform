@@ -5,10 +5,10 @@ class DashboardHeader extends StatelessWidget implements PreferredSizeWidget {
   final Map<String, String>? currentUser;
 
   const DashboardHeader({
-    Key? key,
+    super.key,
     required this.onLogout,
     this.currentUser,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

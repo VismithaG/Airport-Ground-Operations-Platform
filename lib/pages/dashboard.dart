@@ -44,18 +44,20 @@ class DashboardPage extends StatefulWidget {
   final VoidCallback onLogout;
   final UserInfo? currentUser;
 
+  // converted 'key' to a super parameter
   const DashboardPage({
-    Key? key,
+    super.key,
     required this.onLogout,
     this.currentUser,
-  }) : super(key: key);
+  });
 
   @override
   State<DashboardPage> createState() => _DashboardPageState();
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  List<WorkOrder> _workOrders = List.from(_mockWorkOrders);
+  // made this field final (the list can still be mutated)
+  final List<WorkOrder> _workOrders = List.from(_mockWorkOrders);
 
   void _addMockWorkOrder() {
     setState(() {
