@@ -8,9 +8,9 @@ class LoginForm extends StatefulWidget {
   }) onLogin;
 
   const LoginForm({
-    Key? key,
+    super.key,
     required this.onLogin,
-  }) : super(key: key);
+  });
 
   @override
   State<LoginForm> createState() => _LoginFormState();
