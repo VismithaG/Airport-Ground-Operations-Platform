@@ -1,5 +1,7 @@
+// lib/pages/dashboard.dart
 import 'package:flutter/material.dart';
-import 'dashboardheader.dart'; // Ensure this matches your file structure
+import 'dashboardheader.dart';
+import 'create_work_order/work_orders_list_page.dart';
 
 // -------------------- Models --------------------
 
@@ -13,8 +15,8 @@ class UserInfo {
 class WorkOrder {
   final String id;
   final String title;
-  final String details; // Gate info, etc.
-  final String status; // Open, In progress, Completed
+  final String details;
+  final String status;
   
   WorkOrder({
     required this.id,
@@ -41,8 +43,10 @@ class DashboardPage extends StatefulWidget {
 }
 
 class _DashboardPageState extends State<DashboardPage> {
-  // Mock Data matching the screenshot
-  final List<WorkOrder> _workOrders = [
+  int _selectedIndex = 0; // 0: Overview, 1: Work Orders
+
+  // Mock Data for the Overview Widget
+  final List<WorkOrder> _recentWorkOrders = [
     WorkOrder(id: '22745', title: 'GPU Maintenance - Terminal A', details: 'Gate A12 • A330', status: 'In progress'),
     WorkOrder(id: '22746', title: 'Emirates EK 650 - Service Request', details: 'Gate B05 • A350', status: 'Open'),
     WorkOrder(id: '22745', title: 'Runaway Light Inspection', details: 'Gate A12 • A330', status: 'In progress'),
@@ -64,171 +68,205 @@ class _DashboardPageState extends State<DashboardPage> {
               }
             : null,
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // 1. Tab Bar (Visual Only)
-              Row(
-                children: [
-                  Column(
-                    children: [
-                      const Text("Dashboard Overview", style: TextStyle(color: Color(0xFFB71C1C), fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 4),
-                      Container(height: 2, width: 140, color: const Color(0xFFB71C1C)),
-                    ],
-                  ),
-                  const SizedBox(width: 20),
-                  const Text("Work Orders", style: TextStyle(color: Colors.grey)),
-                ],
-              ),
-              const SizedBox(height: 30),
-
-              // 2. Welcome Section & Action Button
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          "Welcome to\nService Operations",
-                          style: TextStyle(fontSize: 26, fontWeight: FontWeight.w600, color: Color(0xFFB71C1C), height: 1.2),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          "Monitor and manage airport ground\nservice operations efficiently.",
-                          style: TextStyle(color: Colors.grey[600], fontSize: 14),
-                        ),
-                      ],
-                    ),
-                  ),
-                  ElevatedButton.icon(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFFB71C1C), // Dark Red
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                    ),
-                    icon: const Icon(Icons.add, size: 18),
-                    label: const Text("New Work Order"),
-                  )
-                ],
-              ),
-              const SizedBox(height: 30),
-
-              // 3. Status Cards
-              _buildStatusCard(Icons.settings_outlined, "Total Work Orders", "25", Colors.brown),
-              _buildStatusCard(Icons.access_time, "Open", "8", Colors.brown),
-              _buildStatusCard(Icons.fast_forward, "In Progress", "5", Colors.brown),
-              _buildStatusCard(Icons.check, "Completed Today", "7", Colors.brown),
-              _buildStatusCard(Icons.error_outline, "Overdue", "2", Colors.brown),
-              
-              const SizedBox(height: 30),
-
-              // 4. Weekly Activity Chart
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: Colors.grey.shade300),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: const [
-                        Icon(Icons.calendar_today, color: Color(0xFFB71C1C), size: 20),
-                        SizedBox(width: 8),
-                        Text("Weekly Activity", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    // Custom Bar Chart Widget
-                    SizedBox(
-                      height: 180,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          _buildBar("MON", 0.6),
-                          _buildBar("TUE", 0.35),
-                          _buildBar("WED", 0.4),
-                          _buildBar("THU", 0.38),
-                          _buildBar("FRI", 0.5),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              
-              const SizedBox(height: 30),
-
-              // 5. Recent Work Orders List
-              Container(
-                 decoration: BoxDecoration(
-                  color: Colors.white,
-                  border: Border.all(color: Colors.grey.shade400),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text("Recent Work Orders", style: TextStyle(fontSize: 16, color: Colors.grey[700])),
-                    const SizedBox(height: 10),
-                    ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: _workOrders.length,
-                      separatorBuilder: (ctx, i) => const SizedBox(height: 16),
-                      itemBuilder: (context, index) {
-                        final wo = _workOrders[index];
-                        return Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(wo.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                                  const SizedBox(height: 4),
-                                  Text("${wo.id} • ${wo.details}", style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-                                ],
-                              ),
-                            ),
-                            _buildStatusBadge(wo.status),
-                          ],
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // 1. Tab Bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 10),
+            child: Row(
+              children: [
+                _buildTabItem(0, "Dashboard Overview"),
+                const SizedBox(width: 30),
+                _buildTabItem(1, "Work Orders"),
+              ],
+            ),
           ),
-        ),
+          
+          // 2. Content Area (Switches based on selection)
+          Expanded(
+            child: _selectedIndex == 0 
+              ? _buildOverview() 
+              : const WorkOrdersListPage(),
+          ),
+        ],
       ),
     );
   }
 
-  // --- Helper Widgets ---
+  Widget _buildTabItem(int index, String label) {
+    final bool isSelected = _selectedIndex == index;
+    return InkWell(
+      onTap: () => setState(() => _selectedIndex = index),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              color: isSelected ? const Color(0xFFB71C1C) : Colors.grey,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              fontSize: 15,
+            ),
+          ),
+          const SizedBox(height: 6),
+          // Underline indicator
+          if (isSelected)
+            Container(height: 2, width: 40, color: const Color(0xFFB71C1C))
+          else
+            const SizedBox(height: 2), // Placeholder to prevent jump
+        ],
+      ),
+    );
+  }
 
-  Widget _buildStatusCard(IconData icon, String label, String count, Color color) {
+  // --- Overview Tab Content ---
+  Widget _buildOverview() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Welcome Section
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Welcome to\nService Operations",
+                      style: TextStyle(fontSize: 26, fontWeight: FontWeight.w600, color: Color(0xFFB71C1C), height: 1.2),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Monitor and manage airport ground\nservice operations efficiently.",
+                      style: TextStyle(color: Colors.grey[600], fontSize: 14),
+                    ),
+                  ],
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: () => setState(() => _selectedIndex = 1), // Switch to Work Orders tab
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFB71C1C),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                ),
+                icon: const Icon(Icons.list_alt, size: 18),
+                label: const Text("View All Orders"),
+              )
+            ],
+          ),
+          const SizedBox(height: 30),
+
+          // Status Cards
+          _buildStatusCard(Icons.settings_outlined, "Total Work Orders", "25"),
+          _buildStatusCard(Icons.access_time, "Open", "8"),
+          _buildStatusCard(Icons.fast_forward, "In Progress", "5"),
+          _buildStatusCard(Icons.check, "Completed Today", "7"),
+          _buildStatusCard(Icons.error_outline, "Overdue", "2"),
+          
+          const SizedBox(height: 30),
+
+          // Weekly Activity Chart
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: Colors.grey.shade300),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: const [
+                    Icon(Icons.calendar_today, color: Color(0xFFB71C1C), size: 20),
+                    SizedBox(width: 8),
+                    Text("Weekly Activity", style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500)),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                SizedBox(
+                  height: 180,
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      _buildBar("MON", 0.6),
+                      _buildBar("TUE", 0.35),
+                      _buildBar("WED", 0.4),
+                      _buildBar("THU", 0.38),
+                      _buildBar("FRI", 0.5),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 30),
+
+          // Recent Work Orders List (Small view)
+          Container(
+             decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(color: Colors.grey.shade400),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Recent Activity", style: TextStyle(fontSize: 16, color: Colors.grey[700])),
+                const SizedBox(height: 10),
+                ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: _recentWorkOrders.length,
+                  separatorBuilder: (ctx, i) => const SizedBox(height: 16),
+                  itemBuilder: (context, index) {
+                    final wo = _recentWorkOrders[index];
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(wo.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                              const SizedBox(height: 4),
+                              Text("${wo.id} • ${wo.details}", style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                            ],
+                          ),
+                        ),
+                        _buildStatusBadge(wo.status),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 20),
+        ],
+      ),
+    );
+  }
+
+  // --- Helpers ---
+
+  Widget _buildStatusCard(IconData icon, String label, String count) {
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(30), // Pill shape
+        borderRadius: BorderRadius.circular(30),
         boxShadow: [
           BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 3, offset: const Offset(0, 1)),
         ],
@@ -236,7 +274,7 @@ class _DashboardPageState extends State<DashboardPage> {
       ),
       child: Row(
         children: [
-          Icon(icon, color: const Color(0xFF8D6E63), size: 24), // Brownish/Red tone
+          Icon(icon, color: const Color(0xFF8D6E63), size: 24),
           const SizedBox(width: 16),
           Expanded(child: Text(label, style: TextStyle(color: Colors.grey[700], fontSize: 16))),
           Text(count, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
@@ -251,11 +289,8 @@ class _DashboardPageState extends State<DashboardPage> {
       children: [
         Container(
           width: 30,
-          height: 140 * fillPercentage, // Scale height
-          decoration: BoxDecoration(
-            color: Colors.grey[300],
-            border: Border.all(color: Colors.black87),
-          ),
+          height: 140 * fillPercentage,
+          decoration: BoxDecoration(color: Colors.grey[300], border: Border.all(color: Colors.black87)),
         ),
         const SizedBox(height: 8),
         Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
@@ -265,32 +300,16 @@ class _DashboardPageState extends State<DashboardPage> {
 
   Widget _buildStatusBadge(String status) {
     Color bgColor;
-    Color textColor = Colors.black87;
-
     switch (status) {
-      case 'In progress':
-        bgColor = const Color(0xFFE6EE9C); // Light Green/Yellow
-        break;
-      case 'Open':
-        bgColor = const Color(0xFFA5D6A7); // Green
-        break;
-      case 'Completed':
-        bgColor = const Color(0xFFB2EBF2); // Light Cyan
-        break;
-      default:
-        bgColor = Colors.grey.shade200;
+      case 'In progress': bgColor = const Color(0xFFE6EE9C); break;
+      case 'Open': bgColor = const Color(0xFFA5D6A7); break;
+      case 'Completed': bgColor = const Color(0xFFB2EBF2); break;
+      default: bgColor = Colors.grey.shade200;
     }
-
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        status,
-        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: textColor),
-      ),
+      decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(12)),
+      child: Text(status, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500, color: Colors.black87)),
     );
   }
 }
