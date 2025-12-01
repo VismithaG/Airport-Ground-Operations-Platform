@@ -12,6 +12,7 @@ class WorkOrder {
   final String location;
   final String aircraft;
   final String status;
+  final String? priority; // Added this field
   final DateTime createdAt;
   final DateTime? dueDate;
   final List<String> services;
@@ -25,6 +26,7 @@ class WorkOrder {
     required this.location,
     required this.aircraft,
     required this.status,
+    this.priority = 'Medium', // Default value
     required this.createdAt,
     this.dueDate,
     required this.services,
