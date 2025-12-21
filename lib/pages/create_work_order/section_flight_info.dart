@@ -20,7 +20,7 @@ class SectionFlightInfo extends StatelessWidget {
     required this.onAircraftChanged,
     required this.onPickDueDate,
     required this.dueDate,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -53,7 +53,14 @@ class SectionFlightInfo extends StatelessWidget {
                 ),
               ),
               SizedBox(width: 120, child: TextField(controller: gateCtl, decoration: const InputDecoration(labelText: 'Gate No.'))),
-              SizedBox(width: 160, child: OutlinedButton.icon(onPressed: onPickDueDate, icon: const Icon(Icons.calendar_today), label: Text(dueDate == null ? 'Pick Due Date' : '${dueDate!.toLocal().toIso8601String().split('T').first}'))),
+              SizedBox(
+                width: 160,
+                child: OutlinedButton.icon(
+                  onPressed: onPickDueDate,
+                  icon: const Icon(Icons.calendar_today),
+                  label: Text(dueDate == null ? 'Pick Due Date' : dueDate!.toLocal().toIso8601String().split('T').first),
+                ),
+              ),
             ]),
           ],
         ),
