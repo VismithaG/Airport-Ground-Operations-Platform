@@ -39,7 +39,7 @@ class CreateWorkOrderPage extends StatefulWidget {
   final VoidCallback onBack;
   final ValueChanged<WorkOrder> onSave;
 
-  const CreateWorkOrderPage({Key? key, required this.onBack, required this.onSave}) : super(key: key);
+  const CreateWorkOrderPage({super.key, required this.onBack, required this.onSave});
 
   @override
   State<CreateWorkOrderPage> createState() => _CreateWorkOrderPageState();

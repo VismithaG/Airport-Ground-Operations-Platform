@@ -34,7 +34,7 @@ class SectionServices extends StatelessWidget {
   final void Function(String category, String service, bool checked) onToggle;
   final void Function(String service, int qty) onQuantityChanged;
 
-  const SectionServices({Key? key, required this.selected, required this.quantities, required this.onToggle, required this.onQuantityChanged}) : super(key: key);
+  const SectionServices({super.key, required this.selected, required this.quantities, required this.onToggle, required this.onQuantityChanged});
 
   @override
   Widget build(BuildContext context) {

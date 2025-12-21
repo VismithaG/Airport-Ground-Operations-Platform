@@ -28,69 +28,88 @@ class DashboardHeader extends StatelessWidget implements PreferredSizeWidget {
         .join()
         .toUpperCase();
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 4, offset: const Offset(0, 2)),
-        ],
-      ),
-      child: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // -------- Left: Logo and Title --------
-              Row(
-                children: [
-                  // Logo Placeholder
-                  Image.network(
-                     // Using a placeholder that looks like the airline logo or a fallback icon
-                     'https://upload.wikimedia.org/wikipedia/en/thumb/9/9b/SriLankan_Airlines_Logo.svg/1200px-SriLankan_Airlines_Logo.svg.png',
-                     width: 40,
-                     errorBuilder: (context, error, stackTrace) => Container(
-                       width: 40, height: 40,
-                       decoration: BoxDecoration(color: Colors.red.shade700, borderRadius: BorderRadius.circular(8)),
-                       child: const Icon(Icons.flight_takeoff, color: Colors.white),
-                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: const [
-                      Text(
-                        "Service Department",
-                        style: TextStyle(
-                          color: Color(0xFFB71C1C), // Deep Red
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+    return LayoutBuilder(builder: (context, constraints) {
+      final isCompact = constraints.maxWidth < 480;
+      return Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 4, offset: const Offset(0, 2)),
+          ],
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Left: Logo and Title (compact on small screens)
+                Row(
+                  children: [
+                    // Logo Placeholder
+                    Container(
+                      width: isCompact ? 36 : 40,
+                      height: isCompact ? 36 : 40,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(8),
+                        color: Colors.red.shade700,
+                      ),
+                      child: const Icon(Icons.flight_takeoff, color: Colors.white),
+                    ),
+                    const SizedBox(width: 10),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          isCompact ? 'Service Dept' : 'Service Department',
+                          style: TextStyle(
+                            color: const Color(0xFF7F1D1D),
+                            fontSize: isCompact ? 14 : 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        if (!isCompact)
+                          const Text(
+                            'Ground Operations Portal',
+                            style: TextStyle(color: Colors.grey, fontSize: 12),
+                          ),
+                      ],
+                    ),
+                  ],
+                ),
+
+                // Right: User Avatar / compact menu
+                Row(
+                  children: [
+                    if (!isCompact)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(user['name'] ?? 'User', style: const TextStyle(fontSize: 14, color: Colors.black87)),
+                            Text(user['role'] ?? '', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                          ],
                         ),
                       ),
-                      Text(
-                        "Ground Operations Portal",
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                    CircleAvatar(
+                      radius: isCompact ? 16 : 18,
+                      backgroundColor: Colors.red.shade100,
+                      child: Text(
+                        initials,
+                        style: TextStyle(color: Colors.red.shade900, fontSize: isCompact ? 12 : 14, fontWeight: FontWeight.bold),
                       ),
-                    ],
-                  ),
-                ],
-              ),
-
-              // -------- Right: User Avatar --------
-              CircleAvatar(
-                radius: 18,
-                backgroundColor: Colors.red.shade100,
-                child: Text(
-                  initials,
-                  style: TextStyle(color: Colors.red.shade900, fontSize: 14, fontWeight: FontWeight.bold),
+                    ),
+                  ],
                 ),
-              )
-            ],
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   @override

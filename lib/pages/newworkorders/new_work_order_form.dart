@@ -11,7 +11,7 @@ class NewWorkOrderForm extends StatefulWidget {
   final ValueChanged<model.WorkOrder> onSubmit;
   final VoidCallback? onCancel;
 
-  const NewWorkOrderForm({Key? key, required this.onSubmit, this.onCancel}) : super(key: key);
+  const NewWorkOrderForm({super.key, required this.onSubmit, this.onCancel});
 
   @override
   State<NewWorkOrderForm> createState() => _NewWorkOrderFormState();
@@ -168,11 +168,11 @@ class _NewWorkOrderFormState extends State<NewWorkOrderForm> {
                 const Text('Airport Service Department - Ground Operations', style: TextStyle(color: Colors.grey)),
               ]),
             ]),
-            Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
+              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
               const Text('Work Order #', style: TextStyle(color: Colors.grey)),
               Text(workOrderNumber, style: const TextStyle(fontFamily: 'monospace', fontSize: 14)),
               const SizedBox(height: 4),
-              Text('${_selectedDate.toLocal().toString().split(' ')[0]}', style: const TextStyle(color: Colors.grey)),
+              Text(_selectedDate.toLocal().toString().split(' ')[0], style: const TextStyle(color: Colors.grey)),
             ]),
           ],
         ),

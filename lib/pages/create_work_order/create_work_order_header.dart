@@ -5,7 +5,7 @@ class CreateWorkOrderHeader extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onPickImage;
 
-  const CreateWorkOrderHeader({Key? key, required this.workOrderNumber, required this.onBack, required this.onPickImage}) : super(key: key);
+  const CreateWorkOrderHeader({super.key, required this.workOrderNumber, required this.onBack, required this.onPickImage});
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +22,6 @@ class CreateWorkOrderHeader extends StatelessWidget {
                 children: const [
                   Text('Additional Service Work Order', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF7F1D1D))),
                   SizedBox(height: 4),
-                  Text('Based on Airport Service Department form template', style: TextStyle(color: Colors.grey)),
                 ],
               ),
             ],

@@ -11,7 +11,7 @@ class SectionFlightInfo extends StatelessWidget {
   final DateTime? dueDate;
 
   const SectionFlightInfo({
-    Key? key,
+    super.key,
     required this.carrierCtl,
     required this.flightNoCtl,
     required this.dateCtl,
@@ -36,7 +36,22 @@ class SectionFlightInfo extends StatelessWidget {
               SizedBox(width: 260, child: TextField(controller: carrierCtl, decoration: const InputDecoration(labelText: 'Carrier'))),
               SizedBox(width: 180, child: TextField(controller: flightNoCtl, decoration: const InputDecoration(labelText: 'Flight No.'))),
               SizedBox(width: 140, child: TextField(controller: dateCtl, decoration: const InputDecoration(labelText: 'Date'))),
-              SizedBox(width: 200, child: DropdownButtonFormField<String>(value: aircraftType.isEmpty ? null : aircraftType, items: const [DropdownMenuItem(value: 'A330', child: Text('A330')), DropdownMenuItem(value: 'A350', child: Text('A350')), DropdownMenuItem(value: 'A380', child: Text('A380')), DropdownMenuItem(value: 'B777', child: Text('B777')),], onChanged: (String? value) { if (value != null) onAircraftChanged(value); }, decoration: const InputDecoration(labelText: 'Aircraft Type'))),
+              SizedBox(
+                width: 200,
+                child: DropdownButtonFormField<String>(
+                  initialValue: aircraftType.isEmpty ? null : aircraftType,
+                  items: const [
+                    DropdownMenuItem(value: 'A330', child: Text('A330')),
+                    DropdownMenuItem(value: 'A350', child: Text('A350')),
+                    DropdownMenuItem(value: 'A380', child: Text('A380')),
+                    DropdownMenuItem(value: 'B777', child: Text('B777')),
+                  ],
+                  onChanged: (String? value) {
+                    if (value != null) onAircraftChanged(value);
+                  },
+                  decoration: const InputDecoration(labelText: 'Aircraft Type'),
+                ),
+              ),
               SizedBox(width: 120, child: TextField(controller: gateCtl, decoration: const InputDecoration(labelText: 'Gate No.'))),
               SizedBox(width: 160, child: OutlinedButton.icon(onPressed: onPickDueDate, icon: const Icon(Icons.calendar_today), label: Text(dueDate == null ? 'Pick Due Date' : '${dueDate!.toLocal().toIso8601String().split('T').first}'))),
             ]),
