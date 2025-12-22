@@ -147,34 +147,49 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
           ),
           const SizedBox(height: 24),
 
-          // 3. Table Header
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            child: Row(
-              children: const [
-                SizedBox(width: 80, child: Text("Work Order ID", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                Expanded(flex: 2, child: Text("Title & Flight Number", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                Expanded(flex: 1, child: Text("Priority", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                Expanded(flex: 1, child: Text("Status", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                Expanded(flex: 2, child: Text("Services", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                Expanded(flex: 1, child: Text("Location", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                Expanded(flex: 1, child: Text("Due Date", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-                SizedBox(width: 60, child: Text("Action", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-              ],
-            ),
-          ),
-          const Divider(),
+          // 3. Table Header + rows — wrap horizontally so mobile users can scroll
+          LayoutBuilder(builder: (ctx, tableConstraints) {
+            final minTableWidth = 920.0; // minimum width before horizontal scrolling
+            final tableWidth = tableConstraints.maxWidth < minTableWidth ? minTableWidth : tableConstraints.maxWidth;
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: ConstrainedBox(
+                constraints: BoxConstraints(minWidth: tableWidth),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      child: Row(
+                        children: const [
+                          SizedBox(width: 80, child: Text("Work Order ID", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                          Expanded(flex: 2, child: Text("Title & Flight Number", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                          Expanded(flex: 1, child: Text("Priority", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                          Expanded(flex: 1, child: Text("Status", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                          Expanded(flex: 2, child: Text("Services", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                          Expanded(flex: 1, child: Text("Location", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                          Expanded(flex: 1, child: Text("Due Date", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                          SizedBox(width: 60, child: Text("Action", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+                        ],
+                      ),
+                    ),
+                    const Divider(),
 
-          // 4. List Items
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: _workOrders.length,
-            separatorBuilder: (context, index) => const Divider(height: 1),
-            itemBuilder: (context, index) {
-              return _buildWorkOrderRow(_workOrders[index]);
-            },
-          ),
+                    // 4. List Items
+                    ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: _workOrders.length,
+                      separatorBuilder: (context, index) => const Divider(height: 1),
+                      itemBuilder: (context, index) {
+                        return _buildWorkOrderRow(_workOrders[index]);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
         ],
       ),
     );
@@ -210,9 +225,9 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(wo.title, style: const TextStyle(fontWeight: FontWeight.bold)),
-                Text("Aircraft: ${wo.aircraft}", style: const TextStyle(color: Colors.blue, fontSize: 12)),
-                Text(wo.details, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                Text(wo.title, style: const TextStyle(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis, maxLines: 1),
+                Text('Aircraft: ${wo.aircraft}', style: const TextStyle(color: Colors.blue, fontSize: 12), overflow: TextOverflow.ellipsis),
+                Text(wo.details, style: const TextStyle(color: Colors.grey, fontSize: 11), overflow: TextOverflow.ellipsis, maxLines: 2),
               ],
             ),
           ),
@@ -231,7 +246,7 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
               children: [
                 ...wo.services.take(2).map((s) => Padding(
                       padding: const EdgeInsets.only(bottom: 2.0),
-                      child: Text(s, style: const TextStyle(color: Colors.blue, fontSize: 12)),
+                      child: Text(s, style: const TextStyle(color: Colors.blue, fontSize: 12), overflow: TextOverflow.ellipsis),
                     )),
                 if (wo.services.length > 2) const Text("+1 more", style: TextStyle(color: Colors.blue, fontSize: 12)),
               ],
@@ -246,7 +261,7 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
             child: Row(children: [
               const Icon(Icons.calendar_today_outlined, size: 14, color: Colors.grey),
               const SizedBox(width: 4),
-              Text(wo.dueDate != null ? "${wo.dueDate!.day} - ${_getMonth(wo.dueDate!.month)} - ${wo.dueDate!.year}" : "N/A", style: const TextStyle(fontSize: 13)),
+              Text(wo.dueDate != null ? '${wo.dueDate!.day} - ${_getMonth(wo.dueDate!.month)} - ${wo.dueDate!.year}' : 'N/A', style: const TextStyle(fontSize: 13)),
             ]),
           ),
           SizedBox(
