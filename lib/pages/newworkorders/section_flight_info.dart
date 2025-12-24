@@ -56,7 +56,7 @@ class SectionFlightInfo extends StatelessWidget {
               SizedBox(
                 width: 200,
                 child: DropdownButtonFormField<String>(
-                  value: aircraftType.isEmpty ? null : aircraftType,
+                  initialValue: aircraftType.isEmpty ? null : aircraftType,
                   decoration: const InputDecoration(labelText: 'Aircraft Type'),
                   onChanged: (v) => onAircraftChanged(v ?? ''),
                   items: const [
@@ -88,7 +88,7 @@ class SectionFlightInfo extends StatelessWidget {
               SizedBox(
                 width: 240,
                 child: DropdownButtonFormField<String>(
-                  value: department,
+                  initialValue: department,
                   decoration: const InputDecoration(labelText: 'Department'),
                   onChanged: (v) => onDepartmentChanged(v ?? ''),
                   items: const [
@@ -103,7 +103,7 @@ class SectionFlightInfo extends StatelessWidget {
               SizedBox(
                 width: 200,
                 child: DropdownButtonFormField<String>(
-                  value: priority,
+                  initialValue: priority,
                   decoration: const InputDecoration(labelText: 'Priority Level'),
                   onChanged: (v) => onPriorityChanged(v ?? ''),
                   items: const [

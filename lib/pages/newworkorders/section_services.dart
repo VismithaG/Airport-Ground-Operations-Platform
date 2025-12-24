@@ -37,7 +37,7 @@ class SectionReview extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Widget _serviceSummaryTile(String service) {
+    Widget serviceSummaryTile(String service) {
       final qty = quantities[service];
       final note = notes[service];
       return Container(
@@ -77,7 +77,7 @@ class SectionReview extends StatelessWidget {
             const Text('Requested Services', style: TextStyle(fontWeight: FontWeight.w600)),
             const SizedBox(height: 8),
             if (selectedServices.isEmpty) const Text('No services selected', style: TextStyle(color: Colors.grey))
-            else Column(children: selectedServices.map((s) => _serviceSummaryTile(s)).toList()),
+            else Column(children: selectedServices.map((s) => serviceSummaryTile(s)).toList()),
             if (specialInstructions.isNotEmpty) ...[
               const SizedBox(height: 12),
               const Divider(),

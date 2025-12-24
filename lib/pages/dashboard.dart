@@ -191,20 +191,33 @@ class _DashboardPageState extends State<DashboardPage> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                SizedBox(
-                  height: 180,
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      _buildBar("MON", 0.6),
-                      _buildBar("TUE", 0.35),
-                      _buildBar("WED", 0.4),
-                      _buildBar("THU", 0.38),
-                      _buildBar("FRI", 0.5),
-                    ],
-                  ),
-                ),
+                LayoutBuilder(builder: (ctx, chartConstraints) {
+                  final isNarrow = chartConstraints.maxWidth < 480;
+                  final bars = [
+                    _buildBar("MON", 0.6),
+                    _buildBar("TUE", 0.35),
+                    _buildBar("WED", 0.4),
+                    _buildBar("THU", 0.38),
+                    _buildBar("FRI", 0.5),
+                  ];
+                  if (isNarrow) {
+                    return SizedBox(
+                      height: 180,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(children: bars.map((b) => SizedBox(width: 64, child: b)).toList()),
+                      ),
+                    );
+                  }
+                  return SizedBox(
+                    height: 180,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: bars,
+                    ),
+                  );
+                }),
               ],
             ),
           ),
@@ -268,7 +281,7 @@ class _DashboardPageState extends State<DashboardPage> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(30),
         boxShadow: [
-          BoxShadow(color: Colors.grey.withOpacity(0.1), spreadRadius: 1, blurRadius: 3, offset: const Offset(0, 1)),
+          BoxShadow(color: Colors.grey.withValues(alpha: 0.1), spreadRadius: 1, blurRadius: 3, offset: const Offset(0, 1)),
         ],
         border: Border.all(color: Colors.grey.shade200),
       ),

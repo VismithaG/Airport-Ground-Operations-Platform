@@ -381,16 +381,17 @@ class AdminPanelPage extends StatefulWidget {
   final SecuritySettings security;
   final SystemSettings settings;
 
-  const AdminPanelPage({
+  AdminPanelPage({
     super.key,
     required this.currentUser,
     required this.onLogout,
     required this.onNavigateToUserDetails,
     this.users = const [],
     this.activityLogs = const [],
-    required this.security,
-    required this.settings,
-  });
+    SecuritySettings? security,
+    SystemSettings? settings,
+  })  : security = security ?? securitySettings,
+        settings = settings ?? systemSettings;
 
   @override
   State<AdminPanelPage> createState() => _AdminPanelPageState();

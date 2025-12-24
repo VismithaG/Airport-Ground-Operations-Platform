@@ -95,19 +95,28 @@ class LoginPage extends StatelessWidget {
                     builder: (context, constraints) {
                       final isLargeScreen = constraints.maxWidth > 900;
 
-                      return GridView.count(
-                        shrinkWrap: true,
-                        crossAxisCount: isLargeScreen ? 2 : 1,
-                        crossAxisSpacing: 20,
-                        mainAxisSpacing: 20,
-                        children: [
-                          if (isLargeScreen)
-                            _buildLeftPanel(context, company)
-                          else
+                      // Desktop/tablet: two-column layout. Mobile: stacked column.
+                      if (isLargeScreen) {
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Left features column
+                            Expanded(flex: 1, child: _buildLeftPanel(context, company)),
+                            const SizedBox(width: 20),
+                            // Right login column
+                            Expanded(flex: 1, child: _buildRightPanel(context, company)),
+                          ],
+                        );
+                      } else {
+                        return Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
                             _buildMobileHeader(context, company),
-                          _buildRightPanel(context, company),
-                        ],
-                      );
+                            const SizedBox(height: 12),
+                            _buildRightPanel(context, company),
+                          ],
+                        );
+                      }
                     },
                   ),
                 ),

@@ -5,7 +5,7 @@ class SectionNotesAndActions extends StatelessWidget {
   final VoidCallback onReset;
   final VoidCallback onSubmit;
 
-  const SectionNotesAndActions({Key? key, required this.notesCtl, required this.onReset, required this.onSubmit}) : super(key: key);
+  const SectionNotesAndActions({super.key, required this.notesCtl, required this.onReset, required this.onSubmit});
 
   @override
   Widget build(BuildContext context) {

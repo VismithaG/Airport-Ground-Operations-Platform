@@ -48,7 +48,7 @@ class WorkOrder {
 class NewWorkOrderPage extends StatefulWidget {
   final VoidCallback? onBack;
 
-  const NewWorkOrderPage({Key? key, this.onBack}) : super(key: key);
+  const NewWorkOrderPage({super.key, this.onBack});
 
   @override
   State<NewWorkOrderPage> createState() => _NewWorkOrderPageState();
