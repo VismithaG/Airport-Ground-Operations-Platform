@@ -394,12 +394,13 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
           ),
           
           // Actions
-          SizedBox(
-            width: 60,
+          Flexible(
+            fit: FlexFit.loose,
             child: Row(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.remove_red_eye_outlined, size: 18, color: Colors.yellow[700]), // Yellow Eye
-                const SizedBox(width: 12),
+                const SizedBox(width: 8),
                 const Icon(Icons.edit_outlined, size: 18, color: Colors.cyan), // Cyan/Blue Edit
               ],
             ),
