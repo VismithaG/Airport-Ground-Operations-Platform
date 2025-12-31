@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'dashboardheader.dart';
 import 'create_work_order/work_orders_list_page.dart';
+import 'approval/approval_list_page.dart'; // Import the approval list
 
 // -------------------- Models --------------------
 
@@ -48,9 +49,9 @@ class _DashboardPageState extends State<DashboardPage> {
   // Mock Data for the Overview Widget
   final List<WorkOrder> _recentWorkOrders = [
     WorkOrder(id: '22745', title: 'GPU Maintenance - Terminal A', details: 'Gate A12 • A330', status: 'In progress'),
-    WorkOrder(id: '22746', title: 'Emirates EK 650 - Service Request', details: 'Gate B05 • A350', status: 'Open'),
+    WorkOrder(id: '22746', title: 'Emirates EK 650 - Service Request', details: 'Gate B05 • A350', status: 'Pending Approval'),
     WorkOrder(id: '22745', title: 'Runaway Light Inspection', details: 'Gate A12 • A330', status: 'In progress'),
-    WorkOrder(id: '22745', title: 'Baggage Belt Repair', details: 'Gate A12 • A330', status: 'Open'),
+    WorkOrder(id: '22745', title: 'Baggage Belt Repair', details: 'Gate A12 • A330', status: 'Pending Approval'),
     WorkOrder(id: '22750', title: 'Sri Lankan UL 504 - Service Request', details: 'Gate B07 • A350', status: 'Completed'),
   ];
 
@@ -148,16 +149,37 @@ class _DashboardPageState extends State<DashboardPage> {
                   ],
                 ),
               ),
-              ElevatedButton.icon(
-                onPressed: () => setState(() => _selectedIndex = 1), // Switch to Work Orders tab
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFB71C1C),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-                ),
-                icon: const Icon(Icons.list_alt, size: 18),
-                label: const Text("View All Orders"),
+              // --- ACTION BUTTONS ---
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  ElevatedButton.icon(
+                    onPressed: () => setState(() => _selectedIndex = 1), 
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFB71C1C),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    ),
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text("New Work Order"),
+                  ),
+                  const SizedBox(height: 8),
+                  // Button linking to Approval Workflow
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      Navigator.push(context, MaterialPageRoute(builder: (context) => const ApprovalListPage()));
+                    }, 
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF7F1D1D), // Slightly darker red for distinction
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    ),
+                    icon: const Icon(Icons.check_circle_outline, size: 18),
+                    label: const Text("Approve Work Orders"),
+                  ),
+                ],
               )
             ],
           ),
@@ -166,7 +188,7 @@ class _DashboardPageState extends State<DashboardPage> {
           // Status Cards
           _buildStatusCard(Icons.settings_outlined, "Total Work Orders", "25"),
           _buildStatusCard(Icons.access_time, "Open", "8"),
-          _buildStatusCard(Icons.fast_forward, "In Progress", "5"),
+          _buildStatusCard(Icons.history_edu, "Pending Approval", "5"), // Updated label
           _buildStatusCard(Icons.check, "Completed Today", "7"),
           _buildStatusCard(Icons.error_outline, "Overdue", "2"),
           
@@ -317,6 +339,7 @@ class _DashboardPageState extends State<DashboardPage> {
       case 'In progress': bgColor = const Color(0xFFE6EE9C); break;
       case 'Open': bgColor = const Color(0xFFA5D6A7); break;
       case 'Completed': bgColor = const Color(0xFFB2EBF2); break;
+      case 'Pending Approval': bgColor = Colors.orange.shade100; break;
       default: bgColor = Colors.grey.shade200;
     }
     return Container(
