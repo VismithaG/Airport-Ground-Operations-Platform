@@ -165,20 +165,22 @@ class _DashboardPageState extends State<DashboardPage> {
                     label: const Text("New Work Order"),
                   ),
                   const SizedBox(height: 8),
-                  // Button linking to Approval Workflow
-                  ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(context, MaterialPageRoute(builder: (context) => const ApprovalListPage()));
-                    }, 
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF7F1D1D), // Slightly darker red for distinction
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  // Button linking to Approval Workflow (only for Supervisor/Admin)
+                  if (widget.currentUser != null &&
+                      (widget.currentUser!.role == 'Supervisor' || widget.currentUser!.role == 'Administrator'))
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => ApprovalListPage(currentUserRole: widget.currentUser?.role)));
+                      }, 
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF7F1D1D), // Slightly darker red for distinction
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                      ),
+                      icon: const Icon(Icons.check_circle_outline, size: 18),
+                      label: const Text("Approve Work Orders"),
                     ),
-                    icon: const Icon(Icons.check_circle_outline, size: 18),
-                    label: const Text("Approve Work Orders"),
-                  ),
                 ],
               )
             ],

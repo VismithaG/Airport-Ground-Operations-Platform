@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'work_order_approval_page.dart';
 
 class ApprovalListPage extends StatelessWidget {
-  const ApprovalListPage({super.key});
+  final String? currentUserRole;
+
+  const ApprovalListPage({super.key, this.currentUserRole});
 
   @override
   Widget build(BuildContext context) {
@@ -36,17 +38,29 @@ class ApprovalListPage extends StatelessWidget {
             Text(subtitle),
           ],
         ),
-        trailing: ElevatedButton(
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => WorkOrderApprovalPage(workOrderId: id)),
-            );
-          },
-          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB71C1C), foregroundColor: Colors.white),
-          child: const Text("Review"),
-        ),
+        trailing: _buildTrailing(context, id),
       ),
+    );
+  }
+
+  Widget _buildTrailing(BuildContext context, String id) {
+    final bool allowed = currentUserRole != null && (currentUserRole == 'Supervisor' || currentUserRole == 'Administrator');
+    if (allowed) {
+      return ElevatedButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => WorkOrderApprovalPage(workOrderId: id, currentUserRole: currentUserRole)),
+          );
+        },
+        style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB71C1C), foregroundColor: Colors.white),
+        child: const Text("Review"),
+      );
+    }
+
+    return OutlinedButton(
+      onPressed: null,
+      child: const Text("No Access"),
     );
   }
 }

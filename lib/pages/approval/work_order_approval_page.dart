@@ -4,8 +4,9 @@ import 'approval_success_page.dart';
 
 class WorkOrderApprovalPage extends StatefulWidget {
   final String workOrderId;
+  final String? currentUserRole;
 
-  const WorkOrderApprovalPage({super.key, required this.workOrderId});
+  const WorkOrderApprovalPage({super.key, required this.workOrderId, this.currentUserRole});
 
   @override
   State<WorkOrderApprovalPage> createState() => _WorkOrderApprovalPageState();
@@ -48,6 +49,37 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
 
   @override
   Widget build(BuildContext context) {
+    final bool allowed = widget.currentUserRole != null && (widget.currentUserRole == 'Supervisor' || widget.currentUserRole == 'Administrator');
+
+    if (!allowed) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text("Work Order Approval"),
+          backgroundColor: Colors.white,
+          elevation: 1,
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.black87),
+            onPressed: () => Navigator.pop(context),
+          ),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.block, size: 64, color: Colors.grey),
+                const SizedBox(height: 12),
+                const Text("You do not have permission to approve this work order.", style: TextStyle(fontSize: 16), textAlign: TextAlign.center),
+                const SizedBox(height: 16),
+                ElevatedButton(onPressed: () => Navigator.pop(context), child: const Text("Back")),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: AppBar(
