@@ -238,9 +238,9 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
       onTap: () => setState(() => _decision = label),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? color.withOpacity(0.1) : Colors.white,
-          border: Border.all(color: isSelected ? color : Colors.grey.shade300, width: isSelected ? 2 : 1),
+          decoration: BoxDecoration(
+          color: isSelected ? color.withAlpha((0.1 * 255).round()) : Colors.white,
+          border: Border.all(color: isSelected ? color : Colors.grey.shade300, width: isSelected ? 2.0 : 1.0),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
