@@ -1,429 +1,70 @@
-// lib/admin_panel.dart
+// lib/pages/adminpanel.dart
 import 'package:flutter/material.dart';
 
-// ----------------------------
-// Models & Mock Data (replace with your real data files)
-// ----------------------------
-class UserModel {
-  final String id;
+// -------------------- Models & Mock Data --------------------
+
+class UserData {
   final String name;
   final String email;
   final String role;
   final String department;
-  final String status;
-  final String? lastLogin;
+  final String status; // Active, Inactive, Suspended
+  final String lastLogin;
 
-  UserModel({
-    required this.id,
-    required this.name,
-    required this.email,
-    required this.role,
-    required this.department,
-    required this.status,
-    this.lastLogin,
-  });
+  UserData(this.name, this.email, this.role, this.department, this.status, this.lastLogin);
 }
 
-class ActivityLog {
-  final String id;
+class ActivityLogData {
   final String action;
   final String user;
+  final String userRole; // Added to match UI avatar context
   final String details;
-  final String type;
-  final String severity;
-  final String timestamp;
+  final String severity; // Info, Warning, High
+  final String time;
+  final IconData icon;
 
-  ActivityLog({
-    required this.id,
-    required this.action,
-    required this.user,
-    required this.details,
-    required this.type,
-    required this.severity,
-    required this.timestamp,
-  });
+  ActivityLogData(this.action, this.user, this.userRole, this.details, this.severity, this.time, this.icon);
 }
 
-class PasswordPolicy {
-  final int minLength;
-  final bool requireUppercase;
-  final bool requireLowercase;
-  final bool requireNumbers;
-  final bool requireSpecialChars;
-  final int passwordExpiry;
-  final int preventReuse;
+// -------------------- Admin Panel Page --------------------
 
-  PasswordPolicy({
-    required this.minLength,
-    required this.requireUppercase,
-    required this.requireLowercase,
-    required this.requireNumbers,
-    required this.requireSpecialChars,
-    required this.passwordExpiry,
-    required this.preventReuse,
-  });
-}
-
-class SecuritySettings {
-  final PasswordPolicy passwordPolicy;
-  final SessionSecurity sessionSecurity;
-  final AccessControl accessControl;
-  final AuditSettings auditSettings;
-
-  SecuritySettings({
-    required this.passwordPolicy,
-    required this.sessionSecurity,
-    required this.accessControl,
-    required this.auditSettings,
-  });
-}
-
-class SessionSecurity {
-  final int sessionTimeout;
-  final int maxConcurrentSessions;
-  final bool requireReauth;
-  final bool logoutOnClose;
-
-  SessionSecurity({
-    required this.sessionTimeout,
-    required this.maxConcurrentSessions,
-    required this.requireReauth,
-    required this.logoutOnClose,
-  });
-}
-
-class AccessControl {
-  final int maxFailedAttempts;
-  final int lockoutDuration;
-  final bool enableTwoFactor;
-  final List<String> allowedIpRanges;
-
-  AccessControl({
-    required this.maxFailedAttempts,
-    required this.lockoutDuration,
-    required this.enableTwoFactor,
-    required this.allowedIpRanges,
-  });
-}
-
-class AuditSettings {
-  final int logRetention;
-  final bool enableRealTimeAlerts;
-  final int alertThreshold;
-  final bool exportEnabled;
-
-  AuditSettings({
-    required this.logRetention,
-    required this.enableRealTimeAlerts,
-    required this.alertThreshold,
-    required this.exportEnabled,
-  });
-}
-
-class WorkOrderSettings {
-  final bool autoAssignment;
-  final List<String> priorityLevels;
-  final String defaultPriority;
-  final bool estimationRequired;
-  final int maxActiveOrders;
-  final bool approvalWorkflow;
-
-  WorkOrderSettings({
-    required this.autoAssignment,
-    required this.priorityLevels,
-    required this.defaultPriority,
-    required this.estimationRequired,
-    required this.maxActiveOrders,
-    required this.approvalWorkflow,
-  });
-}
-
-class NotificationsSettings {
-  final bool emailEnabled;
-  final bool smsEnabled;
-  final bool pushEnabled;
-  final int escalationTime;
-  final int reminderInterval;
-  final QuietHours quietHours;
-
-  NotificationsSettings({
-    required this.emailEnabled,
-    required this.smsEnabled,
-    required this.pushEnabled,
-    required this.escalationTime,
-    required this.reminderInterval,
-    required this.quietHours,
-  });
-}
-
-class QuietHours {
-  final bool enabled;
-  final String start;
-  final String end;
-  QuietHours({required this.enabled, required this.start, required this.end});
-}
-
-class BackupSettings {
-  final bool autoBackup;
-  final String frequency;
-  final int retentionDays;
-  final String location;
-  final String? lastBackup;
-  final String? nextBackup;
-
-  BackupSettings({
-    required this.autoBackup,
-    required this.frequency,
-    required this.retentionDays,
-    required this.location,
-    this.lastBackup,
-    this.nextBackup,
-  });
-}
-
-class IntegrationInfo {
-  final String endpoint;
-  final String status;
-  final bool enabled;
-  final String? lastSync;
-
-  IntegrationInfo({
-    required this.endpoint,
-    required this.status,
-    required this.enabled,
-    this.lastSync,
-  });
-}
-
-class SystemSettings {
-  final GeneralSettings general;
-  final WorkOrderSettings workOrders;
-  final NotificationsSettings notifications;
-  final BackupSettings backup;
-  final Map<String, IntegrationInfo> integrations;
-
-  SystemSettings({
-    required this.general,
-    required this.workOrders,
-    required this.notifications,
-    required this.backup,
-    required this.integrations,
-  });
-}
-
-class GeneralSettings {
-  final String systemName;
-  final String timezone;
-  final String dateFormat;
-  final String timeFormat;
-  final String language;
-  final bool maintenanceMode;
-
-  GeneralSettings({
-    required this.systemName,
-    required this.timezone,
-    required this.dateFormat,
-    required this.timeFormat,
-    required this.language,
-    required this.maintenanceMode,
-  });
-}
-
-// --- Minimal mock data to make the file runnable (replace with your own)
-final List<UserModel> mockUsers = [
-  UserModel(
-    id: 'u1',
-    name: 'Alice Johnson',
-    email: 'alice@airport.com',
-    role: 'Supervisor',
-    department: 'Ground Ops',
-    status: 'active',
-    lastLogin: DateTime.now().subtract(const Duration(hours: 4)).toIso8601String(),
-  ),
-  UserModel(
-    id: 'u2',
-    name: 'Bob Smith',
-    email: 'bob@airport.com',
-    role: 'Technician',
-    department: 'Maintenance',
-    status: 'inactive',
-    lastLogin: DateTime.now().subtract(const Duration(days: 3)).toIso8601String(),
-  ),
-  UserModel(
-    id: 'u3',
-    name: 'Admin User',
-    email: 'admin@airport.com',
-    role: 'Administrator',
-    department: 'IT',
-    status: 'active',
-    lastLogin: DateTime.now().subtract(const Duration(minutes: 15)).toIso8601String(),
-  ),
-];
-
-final List<ActivityLog> mockActivityLogs = [
-  ActivityLog(
-    id: 'a1',
-    action: 'User login',
-    user: 'Alice Johnson',
-    details: 'Successful login from 192.168.1.10',
-    type: 'authentication',
-    severity: 'info',
-    timestamp: DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
-  ),
-  ActivityLog(
-    id: 'a2',
-    action: 'Work order created',
-    user: 'Bob Smith',
-    details: 'WO#12345: Replace brake pads',
-    type: 'work_order',
-    severity: 'warning',
-    timestamp: DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
-  ),
-  ActivityLog(
-    id: 'a3',
-    action: 'Failed login attempts',
-    user: 'System',
-    details: 'Multiple failed logins from 10.0.0.5',
-    type: 'security',
-    severity: 'high',
-    timestamp: DateTime.now().subtract(const Duration(hours: 5)).toIso8601String(),
-  ),
-];
-
-final SecuritySettings securitySettings = SecuritySettings(
-  passwordPolicy: PasswordPolicy(
-    minLength: 8,
-    requireUppercase: true,
-    requireLowercase: true,
-    requireNumbers: true,
-    requireSpecialChars: false,
-    passwordExpiry: 90,
-    preventReuse: 5,
-  ),
-  sessionSecurity: SessionSecurity(
-    sessionTimeout: 30,
-    maxConcurrentSessions: 3,
-    requireReauth: true,
-    logoutOnClose: false,
-  ),
-  accessControl: AccessControl(
-    maxFailedAttempts: 5,
-    lockoutDuration: 30,
-    enableTwoFactor: true,
-    allowedIpRanges: ['192.168.0.0/24', '10.0.0.0/16'],
-  ),
-  auditSettings: AuditSettings(
-    logRetention: 365,
-    enableRealTimeAlerts: true,
-    alertThreshold: 10,
-    exportEnabled: false,
-  ),
-);
-
-final SystemSettings systemSettings = SystemSettings(
-  general: GeneralSettings(
-    systemName: 'Airport Ops',
-    timezone: 'Asia/Colombo',
-    dateFormat: 'yyyy-MM-dd',
-    timeFormat: 'HH:mm',
-    language: 'English',
-    maintenanceMode: false,
-  ),
-  workOrders: WorkOrderSettings(
-    autoAssignment: true,
-    priorityLevels: ['Low', 'Medium', 'High'],
-    defaultPriority: 'Medium',
-    estimationRequired: false,
-    maxActiveOrders: 50,
-    approvalWorkflow: true,
-  ),
-  notifications: NotificationsSettings(
-    emailEnabled: true,
-    smsEnabled: false,
-    pushEnabled: true,
-    escalationTime: 30,
-    reminderInterval: 60,
-    quietHours: QuietHours(enabled: true, start: '22:00', end: '06:00'),
-  ),
-  backup: BackupSettings(
-    autoBackup: true,
-    frequency: 'daily',
-    retentionDays: 30,
-    location: 'us-east-1',
-    lastBackup: DateTime.now().subtract(const Duration(hours: 12)).toIso8601String(),
-    nextBackup: DateTime.now().add(const Duration(hours: 12)).toIso8601String(),
-  ),
-  integrations: {
-    'PaymentAPI': IntegrationInfo(
-      endpoint: 'https://api.payment.example',
-      status: 'connected',
-      enabled: true,
-      lastSync: DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
-    ),
-    'WeatherService': IntegrationInfo(
-      endpoint: 'https://api.weather.example',
-      status: 'disconnected',
-      enabled: false,
-      lastSync: null,
-    ),
-  },
-);
-
-// ----------------------------
-// Admin Panel Widget
-// ----------------------------
 class AdminPanelPage extends StatefulWidget {
-  final UserModel currentUser;
-  final VoidCallback onLogout;
-  final void Function(String userId) onNavigateToUserDetails;
-  final List<UserModel> users;
-  final List<ActivityLog> activityLogs;
-  final SecuritySettings security;
-  final SystemSettings settings;
+  final Map<String, String>? currentUser;
+  final VoidCallback? onLogout;
 
-  AdminPanelPage({
-    super.key,
-    required this.currentUser,
-    required this.onLogout,
-    required this.onNavigateToUserDetails,
-    this.users = const [],
-    this.activityLogs = const [],
-    SecuritySettings? security,
-    SystemSettings? settings,
-  })  : security = security ?? securitySettings,
-        settings = settings ?? systemSettings;
+  const AdminPanelPage({super.key, this.currentUser, this.onLogout});
 
   @override
   State<AdminPanelPage> createState() => _AdminPanelPageState();
 }
 
 class _AdminPanelPageState extends State<AdminPanelPage> with SingleTickerProviderStateMixin {
-  // Filters & state
-  String searchQuery = '';
-  String statusFilter = 'all';
-  String departmentFilter = 'all';
-
-  String activitySearchQuery = '';
-  String activityTypeFilter = 'all';
-  String activitySeverityFilter = 'all';
-
   late TabController _tabController;
 
-  late List<UserModel> _users;
-  late List<ActivityLog> _activityLogs;
-  late SecuritySettings _security;
-  late SystemSettings _settings;
+  // Mock Users matching the "User Table" in the image
+  final List<UserData> _users = [
+    UserData("John Smith", "john.smith@airport.com", "Service Technician", "Ground Operations", "Active", "1/20/2025 09:15 AM"),
+    UserData("Michael Johnson", "michael.j@airport.com", "Operations Supervisor", "Ground Operations", "Active", "4/20/2025 08:30 AM"),
+    UserData("Sarah Wilson", "sarah.wilson@airport.com", "Service Technician", "Aircraft Maintenance", "Active", "1/19/2025 11:15 AM"),
+    UserData("Robert Davis", "robert.davis@airport.com", "Ground Crew", "Baggage Handling", "Inactive", "1/20/2025 11:00 AM"),
+    UserData("Emily Rodriguez", "emily.r@airport.com", "Safety Inspector", "Safety & Compliance", "Active", "1/20/2025 11:45 AM"),
+  ];
+
+  // Mock Logs matching the "Activity Table" in the image
+  final List<ActivityLogData> _logs = [
+    ActivityLogData("Login", "John Smith", "Service Technician", "Successful login from workstation WS-001", "Info", "1/20/2025 09:15 AM", Icons.login),
+    ActivityLogData("Work Order Created", "System", "System", "Work order ASD-240820-003 created for Emirates EK 650", "Info", "1/20/2025 10:12 AM", Icons.add_circle_outline),
+    ActivityLogData("Work Order Approved", "Michael Johnson", "Supervisor", "Work order ASD-240820-002 approved with digital signature", "Info", "1/20/2025 09:58 AM", Icons.check_circle_outline),
+    ActivityLogData("Failed Login", "Sarah Wilson", "Service Technician", "Failed login attempt from 203.0.113.10 - incorrect password", "Warning", "1/20/2025 10:05 AM", Icons.warning_amber),
+    ActivityLogData("User Account Modified", "Administrator", "Admin", "Updated permissions for Robert Davis (usr-004)", "Info", "1/20/2025 09:45 AM", Icons.manage_accounts),
+    ActivityLogData("System Backup", "System", "System", "Automated daily backup completed successfully (2.3GB)", "Info", "1/20/2025 09:30 AM", Icons.backup),
+    ActivityLogData("Security Alert", "System", "System", "Multiple failed login attempts detected from IP 198.51.100.42", "High", "1/20/2025 08:45 AM", Icons.security),
+  ];
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-
-    // Set defaults from widget or use mock data
-    _users = widget.users.isEmpty ? mockUsers : widget.users;
-    _activityLogs = widget.activityLogs.isEmpty ? mockActivityLogs : widget.activityLogs;
-    _security = widget.security;
-    _settings = widget.settings;
   }
 
   @override
@@ -432,328 +73,181 @@ class _AdminPanelPageState extends State<AdminPanelPage> with SingleTickerProvid
     super.dispose();
   }
 
-  // Derived lists
-  List<UserModel> get _filteredUsers {
-    return _users
-        .where((u) =>
-            (searchQuery.isEmpty || u.name.toLowerCase().contains(searchQuery.toLowerCase()) || u.email.toLowerCase().contains(searchQuery.toLowerCase())) &&
-            (statusFilter == 'all' || u.status == statusFilter) &&
-            (departmentFilter == 'all' || u.department == departmentFilter))
-        .toList();
-  }
-
-  List<ActivityLog> get _filteredActivityLogs {
-    return _activityLogs
-        .where((log) =>
-            (activitySearchQuery.isEmpty || log.action.toLowerCase().contains(activitySearchQuery.toLowerCase()) || log.details.toLowerCase().contains(activitySearchQuery.toLowerCase())) &&
-            (activityTypeFilter == 'all' || log.type == activityTypeFilter) &&
-            (activitySeverityFilter == 'all' || log.severity == activitySeverityFilter))
-        .toList();
-  }
-
-  // Helper derived stats
-  Map<String, int> get userStats {
-    final total = _users.length;
-    final active = _users.where((u) => u.status == 'active').length;
-    final inactive = _users.where((u) => u.status == 'inactive').length;
-    final suspended = _users.where((u) => u.status == 'suspended').length;
-    return {'total': total, 'active': active, 'inactive': inactive, 'suspended': suspended};
-  }
-
-  Map<String, int> get activityStats {
-    final total = _activityLogs.length;
-    final high = _activityLogs.where((a) => a.severity == 'high').length;
-    final warning = _activityLogs.where((a) => a.severity == 'warning').length;
-    final info = _activityLogs.where((a) => a.severity == 'info').length;
-    return {'total': total, 'high': high, 'warning': warning, 'info': info};
-  }
-
-  List<String> get departments {
-    final set = _users.map((u) => u.department).where((d) => d.isNotEmpty).toSet();
-    return set.toList();
-  }
-
-  // Formatting helpers
-  String formatTimestamp(String iso) {
-    try {
-      final dt = DateTime.parse(iso).toLocal();
-      return '${dt.year.toString().padLeft(4, '0')}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-    } catch (_) {
-      return iso;
-    }
-  }
-
-  Widget severityBadge(String severity) {
-    Color bg;
-    Color text;
-    String label;
-    switch (severity) {
-      case 'high':
-        bg = Colors.red.shade100;
-        text = Colors.red.shade800;
-        label = 'High';
-        break;
-      case 'warning':
-        bg = Colors.yellow.shade100;
-        text = Colors.yellow.shade800;
-        label = 'Warning';
-        break;
-      case 'info':
-        bg = Colors.blue.shade50;
-        text = Colors.blue.shade800;
-        label = 'Info';
-        break;
-      default:
-        bg = Colors.grey.shade100;
-        text = Colors.grey.shade800;
-        label = 'Unknown';
-    }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
-      child: Text(label, style: TextStyle(color: text, fontSize: 12)),
-    );
-  }
-
-  Icon getActivityIcon(String type) {
-    switch (type) {
-      case 'authentication':
-        return const Icon(Icons.vpn_key, size: 16);
-      case 'work_order':
-        return const Icon(Icons.build_circle_outlined, size: 16);
-      case 'approval':
-        return const Icon(Icons.check_circle_outline, size: 16);
-      case 'user_management':
-        return const Icon(Icons.group_outlined, size: 16);
-      case 'system':
-        return const Icon(Icons.storage_outlined, size: 16);
-      case 'security':
-        return const Icon(Icons.shield_outlined, size: 16);
-      case 'compliance':
-        return const Icon(Icons.dataset_outlined, size: 16);
-      default:
-        return const Icon(Icons.info_outline, size: 16);
-    }
-  }
-
-  Color severityColor(String severity) {
-    switch (severity) {
-      case 'high':
-        return Colors.red.shade600;
-      case 'warning':
-        return Colors.orange.shade600;
-      case 'info':
-        return Colors.blue.shade600;
-      default:
-        return Colors.grey;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    // Use DefaultTabController for tabs
+    final user = widget.currentUser ?? {"name": "Admin User", "role": "System Administrator"};
+
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        elevation: 1,
         backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
+        elevation: 1,
         title: Row(
           children: [
-            const Icon(Icons.shield_outlined, color: Colors.blueAccent),
+            const Icon(Icons.admin_panel_settings, color: Color(0xFFB71C1C)),
             const SizedBox(width: 8),
-            const Text('Admin Panel', style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(width: 12),
-            Container(
-              margin: const EdgeInsets.only(left: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text('System Administrator', style: TextStyle(fontSize: 12)),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: const [
+                Text("Admin Panel", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 18)),
+                Text("System Administration", style: TextStyle(color: Colors.grey, fontSize: 12)),
+              ],
             ),
           ],
         ),
         actions: [
-          Center(child: Text('Welcome, ${widget.currentUser.name}', style: const TextStyle(fontSize: 14))),
+          Center(child: Text("Welcome, ${user['name']}", style: const TextStyle(fontSize: 14, color: Colors.black87))),
           const SizedBox(width: 12),
-          TextButton.icon(
+          IconButton(
             onPressed: widget.onLogout,
-            icon: const Icon(Icons.logout, size: 18),
-            label: const Text('Logout'),
+            icon: const Icon(Icons.logout, color: Colors.grey),
+            tooltip: 'Logout',
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 16),
         ],
+        iconTheme: const IconThemeData(color: Colors.black87),
         bottom: TabBar(
           controller: _tabController,
+          labelColor: const Color(0xFFB71C1C),
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: const Color(0xFFB71C1C),
           isScrollable: true,
           tabs: const [
-            Tab(icon: Icon(Icons.group_outlined), text: 'User Management'),
-            Tab(icon: Icon(Icons.history), text: 'Activity Logs'),
-            Tab(icon: Icon(Icons.security), text: 'Security'),
-            Tab(icon: Icon(Icons.settings), text: 'System Settings'),
+            Tab(icon: Icon(Icons.group_outlined), text: "User Management"),
+            Tab(icon: Icon(Icons.history), text: "Activity Logs"),
+            Tab(icon: Icon(Icons.security), text: "Security"),
+            Tab(icon: Icon(Icons.settings), text: "System Settings"),
           ],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildUsersTab(context),
-          _buildActivityTab(context),
-          _buildSecurityTab(context),
-          _buildSettingsTab(context),
+          _buildUserManagement(),
+          _buildActivityLogs(),
+          _buildSecurity(),
+          _buildSystemSettings(),
         ],
       ),
     );
   }
 
-  Widget _buildUsersTab(BuildContext context) {
-    final stats = userStats;
+  // -------------------- 1. User Management Tab --------------------
+  Widget _buildUserManagement() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       child: Column(
         children: [
-          // Stats row
+          // Stats Row
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _StatsCard(title: 'Total Users', value: stats['total'].toString(), icon: Icons.group, color: Colors.blue),
-              const SizedBox(width: 12),
-              _StatsCard(title: 'Active Users', value: stats['active'].toString(), icon: Icons.check_circle, color: Colors.green),
-              const SizedBox(width: 12),
-              _StatsCard(title: 'Inactive Users', value: stats['inactive'].toString(), icon: Icons.warning_amber_outlined, color: Colors.orange),
-              const SizedBox(width: 12),
-              _StatsCard(title: 'Suspended', value: stats['suspended'].toString(), icon: Icons.block, color: Colors.red),
+              _buildStatCard("Total Users", "5", Icons.group, Colors.blue),
+              const SizedBox(width: 16),
+              _buildStatCard("Active Users", "4", Icons.check_circle, Colors.green),
+              const SizedBox(width: 16),
+              _buildStatCard("Inactive Users", "1", Icons.person_off, Colors.orange),
+              const SizedBox(width: 16),
+              _buildStatCard("Suspended", "0", Icons.block, Colors.red),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
 
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                children: [
-                  // Header with actions
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('User Management', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                          SizedBox(height: 4),
-                          Text('Manage user accounts, roles, and permissions', style: TextStyle(color: Colors.grey)),
-                        ],
-                      ),
-                      Row(
-                        children: [
-                          TextButton.icon(onPressed: () {}, icon: const Icon(Icons.download_outlined), label: const Text('Export')),
-                          const SizedBox(width: 8),
-                          ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.person_add), label: const Text('Add User')),
-                        ],
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Filters row
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          decoration: InputDecoration(
-                            prefixIcon: const Icon(Icons.search),
-                            hintText: 'Search users...',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
-                          ),
-                          onChanged: (v) => setState(() => searchQuery = v),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        width: 150,
-                        child: DropdownButtonFormField<String>(
-                          initialValue: statusFilter,
-                          items: const [
-                            DropdownMenuItem(value: 'all', child: Text('All Status')),
-                            DropdownMenuItem(value: 'active', child: Text('Active')),
-                            DropdownMenuItem(value: 'inactive', child: Text('Inactive')),
-                            DropdownMenuItem(value: 'suspended', child: Text('Suspended')),
-                          ],
-                          onChanged: (v) => setState(() => statusFilter = v ?? 'all'),
-                          decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 8)),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        width: 180,
-                        child: DropdownButtonFormField<String>(
-                          initialValue: departmentFilter,
-                          items: [
-                            const DropdownMenuItem(value: 'all', child: Text('All Departments')),
-                            ...departments.map((d) => DropdownMenuItem(value: d, child: Text(d))),
-                          ],
-                          onChanged: (v) => setState(() => departmentFilter = v ?? 'all'),
-                          decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 8)),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                          onPressed: () => setState(() {
-                                searchQuery = '';
-                                statusFilter = 'all';
-                                departmentFilter = 'all';
-                              }),
-                          icon: const Icon(Icons.refresh)),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Users table (DataTable for desktop-like view, fallback to ListView for small widths)
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: DataTable(
-                      columns: const [
-                        DataColumn(label: Text('User')),
-                        DataColumn(label: Text('Role')),
-                        DataColumn(label: Text('Department')),
-                        DataColumn(label: Text('Status')),
-                        DataColumn(label: Text('Last Login')),
-                        DataColumn(label: Text('Actions')),
+          // Main Card
+          Container(
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), boxShadow: [BoxShadow(color: Colors.grey.withAlpha((0.1 * 255).round()), blurRadius: 10)]),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with actions
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text("User Management", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        SizedBox(height: 4),
+                        Text("Manage user accounts, roles, and permissions", style: TextStyle(color: Colors.grey)),
                       ],
-                      rows: _filteredUsers.map((u) {
+                    ),
+                    Row(
+                      children: [
+                        OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.filter_list, size: 18), label: const Text("Filters")),
+                        const SizedBox(width: 12),
+                        OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.download, size: 18), label: const Text("Export")),
+                        const SizedBox(width: 12),
+                        ElevatedButton.icon(
+                          onPressed: () {},
+                          icon: const Icon(Icons.add, size: 18),
+                          label: const Text("Add User"),
+                          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB71C1C), foregroundColor: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+
+                // Search Bar
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: "Search Users...",
+                    prefixIcon: const Icon(Icons.search),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // User Table
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minWidth: 800),
+                    child: DataTable(
+                      headingRowColor: WidgetStateProperty.all(Colors.grey[50]),
+                      columns: const [
+                        DataColumn(label: Text("User", style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(label: Text("Title/Job Role", style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(label: Text("Department", style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(label: Text("Status", style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(label: Text("Last Login", style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(label: Text("Actions", style: TextStyle(fontWeight: FontWeight.bold))),
+                      ],
+                      rows: _users.map((user) {
                         return DataRow(cells: [
                           DataCell(Row(
                             children: [
-                              CircleAvatar(child: Text(_initials(u.name), style: const TextStyle(fontSize: 12))),
-                              const SizedBox(width: 8),
+                              CircleAvatar(radius: 16, backgroundColor: Colors.red.shade50, child: Text(user.name[0], style: const TextStyle(color: Colors.red, fontSize: 12))),
+                              const SizedBox(width: 12),
                               Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(u.name),
-                                    Text(u.email, style: const TextStyle(fontSize: 12, color: Colors.grey))
-                                  ]),
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(user.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                                  Text(user.email, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                ],
+                              ),
                             ],
                           )),
-                          DataCell(Text(u.role)),
-                          DataCell(Text(u.department)),
-                          DataCell(_statusBadge(u.status)),
-                          DataCell(Text(u.lastLogin == null ? 'Never' : formatTimestamp(u.lastLogin!))),
-                          DataCell(Row(
-                            children: [
-                              IconButton(onPressed: () => widget.onNavigateToUserDetails(u.id), icon: const Icon(Icons.remove_red_eye)),
-                              IconButton(onPressed: () {}, icon: const Icon(Icons.edit)),
-                              IconButton(onPressed: () {}, icon: const Icon(Icons.delete_outline)),
-                            ],
-                          )),
+                          DataCell(Text(user.role)),
+                          DataCell(Text(user.department)),
+                          DataCell(_buildStatusBadge(user.status)),
+                          DataCell(Text(user.lastLogin)),
+                          DataCell(Row(children: [
+                            IconButton(icon: const Icon(Icons.visibility_outlined, size: 18, color: Colors.grey), onPressed: () {}),
+                            IconButton(icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.blue), onPressed: () {}),
+                            IconButton(icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red), onPressed: () {}),
+                          ])),
                         ]);
                       }).toList(),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
@@ -761,448 +255,109 @@ class _AdminPanelPageState extends State<AdminPanelPage> with SingleTickerProvid
     );
   }
 
-  Widget _buildActivityTab(BuildContext context) {
-    final stats = activityStats;
+  // -------------------- 2. Activity Logs Tab --------------------
+  Widget _buildActivityLogs() {
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       child: Column(
         children: [
           // Stats
           Row(
             children: [
-              _StatsCard(title: 'Total Events', value: stats['total'].toString(), icon: Icons.history, color: Colors.blue),
-              const SizedBox(width: 12),
-              _StatsCard(title: 'High Priority', value: stats['high'].toString(), icon: Icons.warning_amber, color: Colors.red),
-              const SizedBox(width: 12),
-              _StatsCard(title: 'Warnings', value: stats['warning'].toString(), icon: Icons.report_problem, color: Colors.orange),
-              const SizedBox(width: 12),
-              _StatsCard(title: 'Information', value: stats['info'].toString(), icon: Icons.info_outline, color: Colors.blueAccent),
+              _buildStatCard("Total Events", "10", Icons.list_alt, Colors.blue),
+              const SizedBox(width: 16),
+              _buildStatCard("High Priority", "1", Icons.warning, Colors.red),
+              const SizedBox(width: 16),
+              _buildStatCard("Warnings", "1", Icons.error_outline, Colors.orange),
+              const SizedBox(width: 16),
+              _buildStatCard("Information", "8", Icons.info_outline, Colors.blueAccent),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 24),
 
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                children: [
-                  // Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
-                        Text('Recent Activity', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        SizedBox(height: 4),
-                        Text('System events and user activities in real-time', style: TextStyle(color: Colors.grey)),
-                      ]),
-                      Row(children: [
-                        TextButton.icon(onPressed: () {}, icon: const Icon(Icons.download_outlined), label: const Text('Export Logs')),
-                        const SizedBox(width: 8),
-                        OutlinedButton.icon(onPressed: () => setState(() {}), icon: const Icon(Icons.refresh), label: const Text('Refresh')),
-                      ]),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Filters
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: 'Search activities...', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
-                          onChanged: (v) => setState(() => activitySearchQuery = v),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        width: 160,
-                        child: DropdownButtonFormField<String>(
-                          initialValue: activityTypeFilter,
-                          items: const [
-                            DropdownMenuItem(value: 'all', child: Text('All Types')),
-                            DropdownMenuItem(value: 'authentication', child: Text('Authentication')),
-                            DropdownMenuItem(value: 'work_order', child: Text('Work Orders')),
-                            DropdownMenuItem(value: 'approval', child: Text('Approvals')),
-                            DropdownMenuItem(value: 'user_management', child: Text('User Management')),
-                            DropdownMenuItem(value: 'system', child: Text('System')),
-                            DropdownMenuItem(value: 'security', child: Text('Security')),
-                            DropdownMenuItem(value: 'compliance', child: Text('Compliance')),
-                          ],
-                          onChanged: (v) => setState(() => activityTypeFilter = v ?? 'all'),
-                          decoration: const InputDecoration(border: OutlineInputBorder()),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        width: 140,
-                        child: DropdownButtonFormField<String>(
-                          initialValue: activitySeverityFilter,
-                          items: const [
-                            DropdownMenuItem(value: 'all', child: Text('All Levels')),
-                            DropdownMenuItem(value: 'high', child: Text('High')),
-                            DropdownMenuItem(value: 'warning', child: Text('Warning')),
-                            DropdownMenuItem(value: 'info', child: Text('Info')),
-                          ],
-                          onChanged: (v) => setState(() => activitySeverityFilter = v ?? 'all'),
-                          decoration: const InputDecoration(border: OutlineInputBorder()),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Activity list
-                  Column(
-                    children: _filteredActivityLogs.map((log) {
-                      return ListTile(
-                        contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                        leading: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(color: severityColor(log.severity).withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-                          child: getActivityIcon(log.type),
-                        ),
-                        title: Text(log.action, style: const TextStyle(fontWeight: FontWeight.w600)),
-                        subtitle: Text(log.details),
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            severityBadge(log.severity),
-                            const SizedBox(height: 6),
-                            Text(formatTimestamp(log.timestamp), style: const TextStyle(fontSize: 11))
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSecurityTab(BuildContext context) {
-    final s = _security;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // security cards grid
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              _SettingCard(
-                title: 'Password Policy',
-                icon: Icons.vpn_key,
-                description: 'Configure password requirements and security',
-                child: Column(
+          Container(
+            decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), boxShadow: [BoxShadow(color: Colors.grey.withAlpha((0.1 * 255).round()), blurRadius: 10)]),
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _labelRow('Minimum Length', '${s.passwordPolicy.minLength} characters'),
-                    _switchRow('Require Uppercase', s.passwordPolicy.requireUppercase, (v) {}),
-                    _switchRow('Require Lowercase', s.passwordPolicy.requireLowercase, (v) {}),
-                    _switchRow('Require Numbers', s.passwordPolicy.requireNumbers, (v) {}),
-                    _switchRow('Require Special Characters', s.passwordPolicy.requireSpecialChars, (v) {}),
-                    _labelRow('Password Expiry', '${s.passwordPolicy.passwordExpiry} days'),
-                    _labelRow('Prevent Reuse', 'Last ${s.passwordPolicy.preventReuse} passwords'),
-                    const SizedBox(height: 8),
-                    SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.settings), label: const Text('Update Policy'))),
+                    Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
+                      Text("Recent Activity", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      SizedBox(height: 4),
+                      Text("System events and user activities in real-time", style: TextStyle(color: Colors.grey)),
+                    ]),
+                    Row(children: [
+                      OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.download, size: 18), label: const Text("Export Logs")),
+                      const SizedBox(width: 12),
+                      OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.refresh, size: 18), label: const Text("Refresh")),
+                    ]),
                   ],
                 ),
-              ),
-              _SettingCard(
-                title: 'Session Security',
-                icon: Icons.lock_clock,
-                description: 'Manage user session settings and timeouts',
-                child: Column(
-                  children: [
-                    _labelRow('Session Timeout', '${s.sessionSecurity.sessionTimeout} minutes'),
-                    _labelRow('Max Concurrent Sessions', '${s.sessionSecurity.maxConcurrentSessions} sessions'),
-                    _switchRow('Require Re-authentication', s.sessionSecurity.requireReauth, (v) {}),
-                    _switchRow('Logout on Browser Close', s.sessionSecurity.logoutOnClose, (v) {}),
-                    const SizedBox(height: 8),
-                    SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.settings), label: const Text('Update Sessions'))),
-                  ],
+                const SizedBox(height: 20),
+
+                // Search
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: "Search activities...",
+                    prefixIcon: const Icon(Icons.search),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
+                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
+                  ),
                 ),
-              ),
-              _SettingCard(
-                title: 'Access Control',
-                icon: Icons.shield_outlined,
-                description: 'Configure login security and IP restrictions',
-                child: Column(
-                  children: [
-                    _labelRow('Max Failed Attempts', '${s.accessControl.maxFailedAttempts} attempts'),
-                    _labelRow('Lockout Duration', '${s.accessControl.lockoutDuration} minutes'),
-                    _switchRow('Two-Factor Authentication', s.accessControl.enableTwoFactor, (v) {}),
-                    const SizedBox(height: 8),
-                    const Align(alignment: Alignment.centerLeft, child: Text('Allowed IP Ranges', style: TextStyle(fontWeight: FontWeight.w600))),
-                    Column(
-                      children: s.accessControl.allowedIpRanges.map((range) {
-                        return Container(
-                          margin: const EdgeInsets.symmetric(vertical: 4),
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: Colors.grey.shade50),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(range, style: const TextStyle(fontFamily: 'monospace')),
-                              IconButton(onPressed: () {}, icon: const Icon(Icons.delete_outline, size: 18)),
-                            ],
-                          ),
-                        );
+                const SizedBox(height: 20),
+
+                // Activity Table (Replacing ListView with DataTable)
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(minWidth: 800),
+                    child: DataTable(
+                      headingRowColor: WidgetStateProperty.all(Colors.grey[50]),
+                      columns: const [
+                        DataColumn(label: Text("Activity", style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(label: Text("User", style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(label: Text("Details", style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(label: Text("Severity", style: TextStyle(fontWeight: FontWeight.bold))),
+                        DataColumn(label: Text("Time Stamp", style: TextStyle(fontWeight: FontWeight.bold))),
+                      ],
+                      rows: _logs.map((log) {
+                        return DataRow(cells: [
+                          // Activity Column
+                          DataCell(Row(children: [
+                            Icon(log.icon, size: 18, color: Colors.grey[700]),
+                            const SizedBox(width: 8),
+                            Text(log.action, style: const TextStyle(fontWeight: FontWeight.w600)),
+                          ])),
+                          // User Column
+                          DataCell(Row(children: [
+                            CircleAvatar(radius: 12, backgroundColor: Colors.grey[200], child: Text(log.user[0], style: const TextStyle(fontSize: 10, color: Colors.black87))),
+                            const SizedBox(width: 8),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(log.user, style: const TextStyle(fontWeight: FontWeight.w500)),
+                              ],
+                            )
+                          ])),
+                          // Details Column
+                          DataCell(SizedBox(width: 300, child: Text(log.details, overflow: TextOverflow.ellipsis))),
+                          // Severity Column
+                          DataCell(_buildSeverityBadge(log.severity)),
+                          // Time Column
+                          DataCell(Text(log.time)),
+                        ]);
                       }).toList(),
                     ),
-                    const SizedBox(height: 8),
-                    OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.public), label: const Text('Add IP Range')),
-                  ],
-                ),
-              ),
-              _SettingCard(
-                title: 'Audit & Logging',
-                icon: Icons.storage_outlined,
-                description: 'Configure audit logging and retention settings',
-                child: Column(
-                  children: [
-                    _labelRow('Log Retention', '${s.auditSettings.logRetention} days'),
-                    _switchRow('Real-time Alerts', s.auditSettings.enableRealTimeAlerts, (v) {}),
-                    _labelRow('Alert Threshold', '${s.auditSettings.alertThreshold} events'),
-                    _switchRow('Export Enabled', s.auditSettings.exportEnabled, (v) {}),
-                    const SizedBox(height: 8),
-                    SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.settings), label: const Text('Update Audit Settings'))),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Security status overview
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                children: [
-                  Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Text('Security Status Overview', style: TextStyle(fontWeight: FontWeight.bold)),
-                              SizedBox(height: 4),
-                              Text('Current security health and recent alerts', style: TextStyle(color: Colors.grey)),
-                            ]),
-                        OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.remove_red_eye), label: const Text('View All Security Events')),
-                      ]),
-                  const SizedBox(height: 8),
-                  Wrap(spacing: 8, runSpacing: 8, children: [
-                    _statusPill(Colors.green, Icons.check_circle, 'System Secure', 'All security checks passed'),
-                    _statusPill(Colors.orange, Icons.report_problem, '1 Warning', 'Failed login attempts detected'),
-                    _statusPill(Colors.blue, Icons.bar_chart, 'Security Score', '92/100 - Excellent'),
-                  ]),
-                  const SizedBox(height: 12),
-                  Column(
-                    children: _activityLogs.where((log) => log.type == 'security' || log.severity == 'high').take(3).map((log) {
-                      return Container(
-                        margin: const EdgeInsets.symmetric(vertical: 6),
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade200)),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                                children: [
-                                  Container(
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: BoxDecoration(color: severityColor(log.severity).withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-                                      child: getActivityIcon(log.type)),
-                                  const SizedBox(width: 8),
-                                  Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(log.action, style: const TextStyle(fontWeight: FontWeight.w600)),
-                                        Text(log.details, style: const TextStyle(color: Colors.grey))
-                                      ]),
-                                ]),
-                            Text(formatTimestamp(log.timestamp), style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  )
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSettingsTab(BuildContext context) {
-    final s = _settings;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              _SettingCard(
-                title: 'General Configuration',
-                icon: Icons.settings,
-                description: 'Basic system settings and preferences',
-                child: Column(
-                  children: [
-                    _readonlyRow('System Name', s.general.systemName),
-                    _readonlyRow('Timezone', s.general.timezone),
-                    _readonlyRow('Date Format', s.general.dateFormat),
-                    _readonlyRow('Time Format', s.general.timeFormat),
-                    _readonlyRow('Language', s.general.language),
-                    _switchRow('Maintenance Mode', s.general.maintenanceMode, (v) {}),
-                    const SizedBox(height: 8),
-                    SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.settings), label: const Text('Update General Settings'))),
-                  ],
-                ),
-              ),
-              _SettingCard(
-                title: 'Work Order Configuration',
-                icon: Icons.task,
-                description: 'Configure work order processing and workflows',
-                child: Column(
-                  children: [
-                    _switchRow('Auto Assignment', s.workOrders.autoAssignment, (v) {}),
-                    Wrap(spacing: 6, children: s.workOrders.priorityLevels.map((lvl) => Chip(label: Text(lvl))).toList()),
-                    _readonlyRow('Default Priority', s.workOrders.defaultPriority),
-                    _switchRow('Estimation Required', s.workOrders.estimationRequired, (v) {}),
-                    _readonlyRow('Max Active Orders', s.workOrders.maxActiveOrders.toString()),
-                    _switchRow('Approval Workflow', s.workOrders.approvalWorkflow, (v) {}),
-                    const SizedBox(height: 8),
-                    SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.task), label: const Text('Update Work Order Settings'))),
-                  ],
-                ),
-              ),
-              _SettingCard(
-                title: 'Notification Settings',
-                icon: Icons.notifications,
-                description: 'Configure alerts and communication preferences',
-                child: Column(
-                  children: [
-                    _switchRow('Email Notifications', s.notifications.emailEnabled, (v) {}),
-                    _switchRow('SMS Notifications', s.notifications.smsEnabled, (v) {}),
-                    _switchRow('Push Notifications', s.notifications.pushEnabled, (v) {}),
-                    _readonlyRow('Escalation Time', '${s.notifications.escalationTime} minutes'),
-                    _readonlyRow('Reminder Interval', '${s.notifications.reminderInterval} minutes'),
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      const Text('Quiet Hours'),
-                      Switch(value: s.notifications.quietHours.enabled, onChanged: (_) {}),
-                    ]),
-                    Text('${s.notifications.quietHours.start} - ${s.notifications.quietHours.end}', style: const TextStyle(color: Colors.grey)),
-                    const SizedBox(height: 8),
-                    SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.notifications), label: const Text('Update Notifications'))),
-                  ],
-                ),
-              ),
-              _SettingCard(
-                title: 'Backup Configuration',
-                icon: Icons.cloud_upload_outlined,
-                description: 'Manage automated backups and data retention',
-                child: Column(
-                  children: [
-                    _switchRow('Auto Backup', s.backup.autoBackup, (v) {}),
-                    _readonlyRow('Frequency', s.backup.frequency),
-                    _readonlyRow('Retention Period', '${s.backup.retentionDays} days'),
-                    _readonlyRow('Storage Location', s.backup.location),
-                    _readonlyRow('Last Backup', s.backup.lastBackup != null ? formatTimestamp(s.backup.lastBackup!) : 'N/A'),
-                    _readonlyRow('Next Backup', s.backup.nextBackup != null ? formatTimestamp(s.backup.nextBackup!) : 'N/A'),
-                    const SizedBox(height: 8),
-                    Row(children: [
-                      Expanded(child: OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.save_alt), label: const Text('Backup Now'))),
-                      const SizedBox(width: 8),
-                      Expanded(child: ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.settings), label: const Text('Configure'))),
-                    ]),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          // Integrations Card
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                children: [
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: const [
-                    Text('System Integrations', style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text('Manage external system connections and APIs', style: TextStyle(color: Colors.grey)),
-                  ]),
-                  const SizedBox(height: 12),
-                  Column(
-                    children: widget.settings.integrations.entries.map((e) {
-                      final key = e.key;
-                      final info = e.value;
-                      return Container(
-                        margin: const EdgeInsets.symmetric(vertical: 6),
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade200)),
-                        child: Row(
-                          children: [
-                            Container(width: 10, height: 10, decoration: BoxDecoration(color: info.status == 'connected' ? Colors.green : Colors.red, shape: BoxShape.circle)),
-                            const SizedBox(width: 10),
-                            Expanded(
-                                child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(_humanize(key)),
-                                      Text(info.endpoint, style: const TextStyle(color: Colors.grey)),
-                                      if (info.lastSync != null) Text('Last sync: ${formatTimestamp(info.lastSync!)}', style: const TextStyle(color: Colors.grey, fontSize: 12))
-                                    ])),
-                            Badge(text: info.status),
-                            const SizedBox(width: 8),
-                            Switch(value: info.enabled, onChanged: (_) {}),
-                            const SizedBox(width: 8),
-                            IconButton(onPressed: () {}, icon: const Icon(Icons.settings)),
-                          ],
-                        ),
-                      );
-                    }).toList(),
                   ),
-                  const SizedBox(height: 12),
-                  Align(alignment: Alignment.centerRight, child: ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.public), label: const Text('Add Integration'))),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // System information
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                  children: [
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: const [
-                      Text('System Information', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text('Current system status and performance metrics', style: TextStyle(color: Colors.grey))
-                    ]),
-                    const SizedBox(height: 12),
-                    Wrap(spacing: 12, runSpacing: 12, children: [
-                      _infoTile('System Health', Icons.check_circle, 'Operational'),
-                      _infoTile('Active Users', Icons.person, '${mockUsers.where((u) => u.status == 'active').length} online'),
-                      _infoTile('Database Status', Icons.storage, 'Connected'),
-                      _infoTile('Storage Usage', Icons.sd_storage, '2.3 GB / 10 GB'),
-                      _infoTile('Uptime', Icons.schedule, '99.9% (30 days)'),
-                      _infoTile('Version', Icons.info, 'v2.1.0'),
-                    ]),
-                  ]),
+                ),
+              ],
             ),
           ),
         ],
@@ -1210,167 +365,290 @@ class _AdminPanelPageState extends State<AdminPanelPage> with SingleTickerProvid
     );
   }
 
-  // Small helpers & sub-widgets
-  String _initials(String name) {
-    final parts = name.split(' ');
-    return parts.map((p) => p.isNotEmpty ? p[0] : '').join().toUpperCase();
+  // -------------------- 3. Security Tab --------------------
+  Widget _buildSecurity() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Left Column (Settings)
+          Expanded(
+            flex: 2,
+            child: Column(
+              children: [
+                _buildSettingsSection("Password Policy", Icons.vpn_key, [
+                  _buildSwitchRow("Require Uppercase", true),
+                  _buildSwitchRow("Require Lowercase", true),
+                  _buildSwitchRow("Require Numbers", true),
+                  _buildSwitchRow("Require Special Characters", false),
+                  _buildInputRow("Minimum Length", "8 characters"),
+                  _buildInputRow("Password Expiry", "90 days"),
+                  _buildButtonRow("Update Policy"),
+                ]),
+                const SizedBox(height: 20),
+                _buildSettingsSection("Session Security", Icons.timer, [
+                  _buildInputRow("Session Timeout", "30 minutes"),
+                  _buildInputRow("Max Concurrent Sessions", "3 sessions"),
+                  _buildSwitchRow("Require Re-authentication", true),
+                  _buildSwitchRow("Logout on Browser Close", false),
+                  _buildButtonRow("Update Session"),
+                ]),
+                const SizedBox(height: 20),
+                _buildSettingsSection("Access Control", Icons.shield, [
+                  _buildInputRow("Max Failed Attempts", "5 attempts"),
+                  _buildInputRow("Lockout Duration", "15 minutes"),
+                  _buildSwitchRow("Two-Factor Authentication", true),
+                  const Divider(),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8.0),
+                    child: Text("Allowed IP Ranges", style: TextStyle(fontWeight: FontWeight.bold)),
+                  ),
+                  const ListTile(dense: true, title: Text("192.168.1.0/24"), trailing: Icon(Icons.delete, size: 16)),
+                  const ListTile(dense: true, title: Text("10.0.0.0/16"), trailing: Icon(Icons.delete, size: 16)),
+                  OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.add, size: 16), label: const Text("Add Range")),
+                ]),
+              ],
+            ),
+          ),
+          const SizedBox(width: 24),
+          // Right Column (Overview)
+          Expanded(
+            flex: 1,
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade300)),
+                  child: Column(
+                    children: [
+                      const Text("Security Status Overview", style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 16),
+                      _buildSecurityStatusItem("System Secure", "All security checks passed", Colors.green, Icons.check_circle),
+                      const SizedBox(height: 12),
+                      _buildSecurityStatusItem("1 Warning", "Failed login attempts detected", Colors.orange, Icons.warning),
+                      const SizedBox(height: 12),
+                      _buildSecurityStatusItem("Security Score", "92/100 - Excellent", Colors.blue, Icons.shield),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade300)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text("Recent Security Events", style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 12),
+                      ListTile(
+                        contentPadding: EdgeInsets.zero,
+                        leading: Container(padding:const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.warning_amber, color: Colors.red, size: 20)),
+                        title: const Text("Security Alert", style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                        subtitle: const Text("Multiple failed logins from IP 198.51.100.42", style: TextStyle(fontSize: 11)),
+                        trailing: const Text("10m ago", style: TextStyle(fontSize: 11, color: Colors.grey)),
+                      ),
+                      Center(child: TextButton(onPressed: () {}, child: const Text("View All Security Events"))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  Widget _statusBadge(String status) {
-    Color bg;
-    Color fg;
-    switch (status) {
-      case 'active':
-        bg = Colors.green.shade50;
-        fg = Colors.green.shade800;
-        break;
-      case 'inactive':
-        bg = Colors.grey.shade100;
-        fg = Colors.grey.shade800;
-        break;
-      case 'suspended':
-        bg = Colors.red.shade50;
-        fg = Colors.red.shade800;
-        break;
-      default:
-        bg = Colors.grey.shade100;
-        fg = Colors.grey.shade800;
+  // -------------------- 4. System Settings Tab --------------------
+  Widget _buildSystemSettings() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Config
+          Expanded(
+            flex: 2,
+            child: Column(
+              children: [
+                _buildSettingsSection("General Configuration", Icons.settings, [
+                  _buildInputRow("Timezone", "Asia/Colombo"),
+                  _buildInputRow("Date Format", "MM/DD/YYYY"),
+                  _buildInputRow("Language", "English"),
+                  _buildSwitchRow("Maintenance Mode", false),
+                  _buildButtonRow("Update General Settings"),
+                ]),
+                const SizedBox(height: 20),
+                _buildSettingsSection("Work Order Configuration", Icons.assignment, [
+                  _buildInputRow("Default Priority", "Medium"),
+                  _buildSwitchRow("Estimation Required", true),
+                  _buildSwitchRow("Approval Workflow", true),
+                  _buildButtonRow("Update Work Order Settings"),
+                ]),
+                const SizedBox(height: 20),
+                _buildSettingsSection("Notification Settings", Icons.notifications, [
+                  _buildSwitchRow("Email Notifications", true),
+                  _buildSwitchRow("SMS Notifications", false),
+                  _buildSwitchRow("Push Notifications", true),
+                  _buildButtonRow("Update Notifications"),
+                ]),
+              ],
+            ),
+          ),
+          const SizedBox(width: 24),
+          // Backup & Integrations
+          Expanded(
+            flex: 1,
+            child: Column(
+              children: [
+                _buildSettingsSection("Backup Configuration", Icons.cloud_upload, [
+                  _buildSwitchRow("Auto Backup", true),
+                  _buildInputRow("Frequency", "Daily"),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(child: OutlinedButton(onPressed: () {}, child: const Text("Backup Now"))),
+                      const SizedBox(width: 8),
+                      Expanded(child: ElevatedButton(onPressed: () {}, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB71C1C), foregroundColor: Colors.white), child: const Text("Configure"))),
+                    ],
+                  )
+                ]),
+                const SizedBox(height: 20),
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade300)),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text("System Integrations", style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 16),
+                      _buildIntegrationItem("Flight Info System", true, "Connected"),
+                      _buildIntegrationItem("Equipment Management", true, "Connected"),
+                      _buildIntegrationItem("Payroll System", false, "Disconnected"),
+                      const SizedBox(height: 12),
+                      SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.add), label: const Text("Add Integration"))),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // -------------------- Helpers --------------------
+
+  Widget _buildStatCard(String title, String count, IconData icon, Color color) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade200)),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: color.withAlpha((0.1 * 255).round()), borderRadius: BorderRadius.circular(8)),
+              child: Icon(icon, color: color),
+            ),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                Text(count, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(String status) {
+    Color color = status == "Active" ? Colors.green : (status == "Inactive" ? Colors.orange : Colors.red);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: color.withAlpha((0.1 * 255).round()), borderRadius: BorderRadius.circular(12)),
+      child: Text(status, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  Widget _buildSeverityBadge(String severity) {
+    Color color;
+    switch (severity) {
+      case "Info": color = Colors.blue; break;
+      case "Warning": color = Colors.orange; break;
+      case "High": color = Colors.red; break;
+      default: color = Colors.grey;
     }
     return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
-        child: Text(status, style: TextStyle(color: fg, fontSize: 12)));
-  }
-
-  Widget _switchRow(String label, bool value, ValueChanged<bool> onChanged) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label), Switch(value: value, onChanged: onChanged)]),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(color: color.withAlpha((0.1 * 255).round()), borderRadius: BorderRadius.circular(4)),
+      child: Text(severity, style: TextStyle(color: color, fontSize: 11, fontWeight: FontWeight.bold)),
     );
   }
 
-  Widget _labelRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label), Text(value, style: const TextStyle(color: Colors.grey))]),
-    );
-  }
-
-  Widget _readonlyRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label), Text(value, style: const TextStyle(color: Colors.grey))]),
-    );
-  }
-
-  String _humanize(String key) {
-    // Insert spaces before capitals, simple approach
-    return key.replaceAllMapped(RegExp(r'([A-Z])'), (m) => ' ${m.group(0)}').trim();
-  }
-
-  Widget _statusPill(Color bg, IconData icon, String title, String subtitle) {
+  Widget _buildSettingsSection(String title, IconData icon, List<Widget> children) {
     return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: bg.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, color: bg, size: 28),
-        const SizedBox(width: 12),
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: bg)),
-          Text(subtitle, style: TextStyle(color: bg.withValues(alpha: 0.8)))
-        ])
-      ]),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [Icon(icon, color: const Color(0xFFB71C1C), size: 20), const SizedBox(width: 8), Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16))]),
+          const Divider(height: 24),
+          ...children,
+        ],
+      ),
     );
   }
 
-  Widget _infoTile(String title, IconData icon, String value) {
-    return Container(
-      width: 220,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: Colors.grey.shade50),
-      child: Row(
-          children: [
-            Icon(icon, color: Colors.blue),
-            const SizedBox(width: 8),
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.w600)), const SizedBox(height: 4), Text(value, style: const TextStyle(color: Colors.grey))])
-          ]),
+  Widget _buildSwitchRow(String label, bool value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label), Switch(value: value, activeThumbColor: const Color(0xFFB71C1C), onChanged: (v) {})]),
     );
   }
-}
 
-class _StatsCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final IconData icon;
-  final Color color;
+  Widget _buildInputRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label), Text(value, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500))]),
+    );
+  }
 
-  const _StatsCard({required this.title, required this.value, required this.icon, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-          child: Row(children: [
-            Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-                child: Icon(icon, color: color)),
-            const SizedBox(width: 12),
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-              const SizedBox(height: 6),
-              Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color))
-            ])
-          ]),
+  Widget _buildButtonRow(String label) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8.0),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton(
+          onPressed: () {},
+          style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB71C1C), foregroundColor: Colors.white),
+          child: Text(label),
         ),
       ),
     );
   }
-}
 
-class _SettingCard extends StatelessWidget {
-  final String title;
-  final String description;
-  final IconData icon;
-  final Widget child;
-
-  const _SettingCard({required this.title, required this.description, required this.icon, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 520,
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [Icon(icon), const SizedBox(width: 8), Text(title, style: const TextStyle(fontWeight: FontWeight.bold))]),
-            const SizedBox(height: 4),
-            Text(description, style: const TextStyle(color: Colors.grey)),
-            const SizedBox(height: 8),
-            child,
-          ]),
-        ),
-      ),
+  Widget _buildSecurityStatusItem(String title, String subtitle, Color color, IconData icon) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: color.withAlpha((0.1 * 255).round()), borderRadius: BorderRadius.circular(8)),
+      child: Row(children: [Icon(icon, color: color), const SizedBox(width: 12), Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: TextStyle(fontWeight: FontWeight.bold, color: color)), Text(subtitle, style: TextStyle(fontSize: 12, color: color.withAlpha((0.8 * 255).round())))])]),
     );
   }
-}
 
-class Badge extends StatelessWidget {
-  final String text;
-  final Color? color;
-
-  const Badge({super.key, required this.text, this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    final bg = color ?? Colors.grey.shade200;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
-      child: Text(text, style: const TextStyle(fontSize: 12)),
+  Widget _buildIntegrationItem(String name, bool connected, String statusText) {
+    return ListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: Container(width: 8, height: 8, decoration: BoxDecoration(color: connected ? Colors.green : Colors.red, shape: BoxShape.circle)),
+      title: Text(name, style: const TextStyle(fontSize: 14)),
+      subtitle: Text("https://api.example.com • $statusText", style: const TextStyle(fontSize: 11, color: Colors.grey)),
+      trailing: Switch(value: connected, activeThumbColor: Colors.green, onChanged: (v) {}),
     );
   }
 }
