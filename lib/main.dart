@@ -61,6 +61,7 @@ class _LoginScreenState extends State<LoginScreen> {
       MaterialPageRoute(
         builder: (_) => DashboardPage(
           onLogout: (ctx) {
+            debugPrint('Main: onLogout called - navigating to LoginScreen');
             Navigator.pushReplacement(ctx, MaterialPageRoute(builder: (_) => const LoginScreen()));
           },
           currentUser: user,
@@ -76,6 +77,7 @@ class _LoginScreenState extends State<LoginScreen> {
       MaterialPageRoute(
         builder: (_) => DashboardPage(
           onLogout: (ctx) {
+            debugPrint('Main: onLogout called - navigating to LoginScreen');
             Navigator.pushReplacement(ctx, MaterialPageRoute(builder: (_) => const LoginScreen()));
           },
           currentUser: user,
@@ -91,6 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
       MaterialPageRoute(
         builder: (_) => DashboardPage(
             onLogout: (ctx) {
+              debugPrint('Main: onLogout called - navigating to LoginScreen');
               Navigator.pushReplacement(ctx, MaterialPageRoute(builder: (_) => const LoginScreen()));
             },
           currentUser: user,

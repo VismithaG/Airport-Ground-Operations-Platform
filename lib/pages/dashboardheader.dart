@@ -28,7 +28,7 @@ class DashboardHeader extends StatelessWidget implements PreferredSizeWidget {
         .join()
         .toUpperCase();
 
-    return LayoutBuilder(builder: (context, constraints) {
+    return LayoutBuilder(builder: (parentContext, constraints) {
       final isCompact = constraints.maxWidth < 480;
       return Container(
         decoration: BoxDecoration(
@@ -85,10 +85,11 @@ class DashboardHeader extends StatelessWidget implements PreferredSizeWidget {
                     PopupMenuButton<String>(
                       onSelected: (value) {
                         if (value == 'logout') {
-                          onLogout(context);
+                          debugPrint('DashboardHeader: logout selected');
+                          onLogout(parentContext);
                         } else if (value == 'profile') {
                           showDialog(
-                            context: context,
+                            context: parentContext,
                             builder: (ctx) => AlertDialog(
                               title: Text(user['name'] ?? 'User'),
                               content: Column(
@@ -104,8 +105,9 @@ class DashboardHeader extends StatelessWidget implements PreferredSizeWidget {
                                 TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Close')),
                                 TextButton(
                                   onPressed: () {
+                                    debugPrint('DashboardHeader: logout from profile dialog');
                                     Navigator.of(ctx).pop();
-                                    onLogout(ctx);
+                                    onLogout(parentContext);
                                   },
                                   child: const Text('Logout'),
                                 ),
