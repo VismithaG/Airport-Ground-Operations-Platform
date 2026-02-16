@@ -60,11 +60,8 @@ class _LoginScreenState extends State<LoginScreen> {
       context,
       MaterialPageRoute(
         builder: (_) => DashboardPage(
-          onLogout: () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (_) => const LoginScreen()),
-            );
+          onLogout: (ctx) {
+            Navigator.pushReplacement(ctx, MaterialPageRoute(builder: (_) => const LoginScreen()));
           },
           currentUser: user,
         ),
@@ -78,8 +75,8 @@ class _LoginScreenState extends State<LoginScreen> {
       context,
       MaterialPageRoute(
         builder: (_) => DashboardPage(
-          onLogout: () {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+          onLogout: (ctx) {
+            Navigator.pushReplacement(ctx, MaterialPageRoute(builder: (_) => const LoginScreen()));
           },
           currentUser: user,
         ),
@@ -93,9 +90,9 @@ class _LoginScreenState extends State<LoginScreen> {
       context,
       MaterialPageRoute(
         builder: (_) => DashboardPage(
-          onLogout: () {
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
-          },
+            onLogout: (ctx) {
+              Navigator.pushReplacement(ctx, MaterialPageRoute(builder: (_) => const LoginScreen()));
+            },
           currentUser: user,
         ),
       ),
