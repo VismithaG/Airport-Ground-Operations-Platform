@@ -1,5 +1,8 @@
 // lib/pages/adminpanel.dart
+// ignore_for_file: use_build_context_synchronously
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 // -------------------- Models & Mock Data --------------------
 
@@ -40,6 +43,43 @@ class AdminPanelPage extends StatefulWidget {
 
 class _AdminPanelPageState extends State<AdminPanelPage> with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  // Controllers & filters
+  final TextEditingController _userSearchController = TextEditingController();
+  final TextEditingController _logSearchController = TextEditingController();
+  String _userFilterStatus = 'All';
+  String _logSeverityFilter = 'All';
+  List<UserData> _displayedUsers = [];
+  List<ActivityLogData> _displayedLogs = [];
+
+  // Security & System settings state (mock persistence)
+  bool _requireUppercase = true;
+  bool _requireLowercase = true;
+  bool _requireNumbers = true;
+  bool _requireSpecial = false;
+  String _minPasswordLength = '8';
+  String _passwordExpiryDays = '90';
+  bool _autoBackup = true;
+  String _backupFrequency = 'Daily';
+  // Session & access control
+  String _sessionTimeout = '30 minutes';
+  String _maxConcurrentSessions = '3 sessions';
+  bool _requireReauth = true;
+  bool _logoutOnClose = false;
+  String _maxFailedAttempts = '5';
+  String _lockoutDuration = '15 minutes';
+  bool _twoFactor = true;
+  // General settings
+  String _timezone = 'Asia/Colombo';
+  String _dateFormat = 'MM/DD/YYYY';
+  String _language = 'English';
+  bool _maintenanceMode = false;
+  // Work order & notifications
+  String _defaultPriority = 'Medium';
+  bool _estimationRequired = true;
+  bool _approvalWorkflow = true;
+  bool _emailNotifications = true;
+  bool _smsNotifications = false;
+  bool _pushNotifications = true;
 
   // Mock Users matching the "User Table" in the image
   final List<UserData> _users = [
@@ -65,11 +105,18 @@ class _AdminPanelPageState extends State<AdminPanelPage> with SingleTickerProvid
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
+    _displayedUsers = List<UserData>.from(_users);
+    _displayedLogs = List<ActivityLogData>.from(_logs);
+
+    _userSearchController.addListener(_filterUsers);
+    _logSearchController.addListener(_filterLogs);
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _userSearchController.dispose();
+    _logSearchController.dispose();
     super.dispose();
   }
 
@@ -174,6 +221,19 @@ class _AdminPanelPageState extends State<AdminPanelPage> with SingleTickerProvid
                     Row(
                       children: [
                         OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.filter_list, size: 18), label: const Text("Filters")),
+                                const SizedBox(width: 8),
+                                // Status filter
+                                DropdownButton<String>(
+                                  value: _userFilterStatus,
+                                  items: const ["All", "Active", "Inactive", "Suspended"].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                                  onChanged: (v) {
+                                    if (v == null) return;
+                                    setState(() {
+                                      _userFilterStatus = v;
+                                      _filterUsers();
+                                    });
+                                  },
+                                ),
                         const SizedBox(width: 12),
                         OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.download, size: 18), label: const Text("Export")),
                         const SizedBox(width: 12),
@@ -190,15 +250,24 @@ class _AdminPanelPageState extends State<AdminPanelPage> with SingleTickerProvid
                 const SizedBox(height: 20),
 
                 // Search Bar
-                TextField(
-                  decoration: InputDecoration(
-                    hintText: "Search Users...",
-                    prefixIcon: const Icon(Icons.search),
-                    filled: true,
-                    fillColor: Colors.grey[50],
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _userSearchController,
+                        decoration: InputDecoration(
+                          hintText: "Search Users...",
+                          prefixIcon: const Icon(Icons.search),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    OutlinedButton.icon(onPressed: _exportUsers, icon: const Icon(Icons.download, size: 18), label: const Text("Export")),
+                  ],
                 ),
                 const SizedBox(height: 20),
 
@@ -217,7 +286,7 @@ class _AdminPanelPageState extends State<AdminPanelPage> with SingleTickerProvid
                         DataColumn(label: Text("Last Login", style: TextStyle(fontWeight: FontWeight.bold))),
                         DataColumn(label: Text("Actions", style: TextStyle(fontWeight: FontWeight.bold))),
                       ],
-                      rows: _users.map((user) {
+                      rows: _displayedUsers.map((user) {
                         return DataRow(cells: [
                           DataCell(Row(
                             children: [
@@ -239,8 +308,8 @@ class _AdminPanelPageState extends State<AdminPanelPage> with SingleTickerProvid
                           DataCell(Text(user.lastLogin)),
                           DataCell(Row(children: [
                             IconButton(icon: const Icon(Icons.visibility_outlined, size: 18, color: Colors.grey), onPressed: () {}),
-                            IconButton(icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.blue), onPressed: () {}),
-                            IconButton(icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red), onPressed: () {}),
+                            IconButton(icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.blue), onPressed: () => _showUserDialog(editUser: user)),
+                            IconButton(icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red), onPressed: () => _confirmDeleteUser(user)),
                           ])),
                         ]);
                       }).toList(),
@@ -253,6 +322,84 @@ class _AdminPanelPageState extends State<AdminPanelPage> with SingleTickerProvid
         ],
       ),
     );
+  }
+
+  // -------------------- User Management Helpers --------------------
+  void _filterUsers() {
+    final q = _userSearchController.text.toLowerCase();
+    setState(() {
+      _displayedUsers = _users.where((u) {
+        final matchesQuery = q.isEmpty || u.name.toLowerCase().contains(q) || u.email.toLowerCase().contains(q) || u.role.toLowerCase().contains(q);
+        final matchesStatus = _userFilterStatus == 'All' || u.status == _userFilterStatus;
+        return matchesQuery && matchesStatus;
+      }).toList();
+    });
+  }
+
+  Future<void> _showUserDialog({UserData? editUser}) async {
+    final nameCtl = TextEditingController(text: editUser?.name ?? '');
+    final emailCtl = TextEditingController(text: editUser?.email ?? '');
+    final roleCtl = TextEditingController(text: editUser?.role ?? 'Service Technician');
+    final deptCtl = TextEditingController(text: editUser?.department ?? 'Ground Operations');
+    String status = editUser?.status ?? 'Active';
+
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(editUser == null ? 'Add User' : 'Edit User'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nameCtl, decoration: const InputDecoration(labelText: 'Full Name')),
+              TextField(controller: emailCtl, decoration: const InputDecoration(labelText: 'Email')),
+              TextField(controller: roleCtl, decoration: const InputDecoration(labelText: 'Role')),
+              TextField(controller: deptCtl, decoration: const InputDecoration(labelText: 'Department')),
+              DropdownButtonFormField<String>(initialValue: status, items: const ['Active', 'Inactive', 'Suspended'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(), onChanged: (v) => status = v ?? status),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () {
+              final newUser = UserData(nameCtl.text.trim(), emailCtl.text.trim(), roleCtl.text.trim(), deptCtl.text.trim(), status, DateTime.now().toString());
+              setState(() {
+                if (editUser != null) {
+                  final idx = _users.indexOf(editUser);
+                  if (idx >= 0) _users[idx] = newUser;
+                } else {
+                  _users.insert(0, newUser);
+                }
+                _filterUsers();
+              });
+              Navigator.of(ctx).pop(true);
+            },
+            child: const Text('Save'),
+          ),
+        ],
+      ),
+    );
+    if (result == true) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('User saved')));
+    }
+  }
+
+  void _confirmDeleteUser(UserData user) {
+    showDialog<bool>(context: context, builder: (ctx) => AlertDialog(title: const Text('Delete User'), content: Text('Delete ${user.name}? This action cannot be undone.'), actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')), ElevatedButton(onPressed: () { setState(() { _users.remove(user); _filterUsers(); }); Navigator.of(ctx).pop(true); }, child: const Text('Delete'))]));
+  }
+
+  void _exportUsers() {
+    final csv = StringBuffer();
+    csv.writeln('Name,Email,Role,Department,Status,LastLogin');
+    for (final u in _displayedUsers) {
+      csv.writeln('"${u.name}","${u.email}","${u.role}","${u.department}","${u.status}","${u.lastLogin}"');
+    }
+    _showExportDialog('Users CSV', csv.toString());
+  }
+
+  void _showExportDialog(String title, String content) {
+    showDialog(context: context, builder: (ctx) => AlertDialog(title: Text(title), content: SizedBox(width: 600, child: SingleChildScrollView(child: SelectableText(content))), actions: [TextButton(onPressed: () => Clipboard.setData(ClipboardData(text: content)).then((_) => Navigator.of(ctx).pop()), child: const Text('Copy')), TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Close'))]));
   }
 
   // -------------------- 2. Activity Logs Tab --------------------
@@ -299,16 +446,33 @@ class _AdminPanelPageState extends State<AdminPanelPage> with SingleTickerProvid
                 ),
                 const SizedBox(height: 20),
 
-                // Search
-                TextField(
-                  decoration: InputDecoration(
-                    hintText: "Search activities...",
-                    prefixIcon: const Icon(Icons.search),
-                    filled: true,
-                    fillColor: Colors.grey[50],
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-                  ),
+                // Search + filters
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _logSearchController,
+                        decoration: InputDecoration(
+                          hintText: "Search activities...",
+                          prefixIcon: const Icon(Icons.search),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
+                          enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    DropdownButton<String>(
+                      value: _logSeverityFilter,
+                      items: const ['All', 'Info', 'Warning', 'High'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(),
+                      onChanged: (v) { if (v == null) return; setState(() { _logSeverityFilter = v; _filterLogs(); }); },
+                    ),
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(onPressed: _exportLogs, icon: const Icon(Icons.download, size: 18), label: const Text('Export Logs')),
+                    const SizedBox(width: 8),
+                    OutlinedButton.icon(onPressed: _refreshLogs, icon: const Icon(Icons.refresh, size: 18), label: const Text('Refresh')),
+                  ],
                 ),
                 const SizedBox(height: 20),
 
@@ -326,7 +490,7 @@ class _AdminPanelPageState extends State<AdminPanelPage> with SingleTickerProvid
                         DataColumn(label: Text("Severity", style: TextStyle(fontWeight: FontWeight.bold))),
                         DataColumn(label: Text("Time Stamp", style: TextStyle(fontWeight: FontWeight.bold))),
                       ],
-                      rows: _logs.map((log) {
+                      rows: _displayedLogs.map((log) {
                         return DataRow(cells: [
                           // Activity Column
                           DataCell(Row(children: [
@@ -378,27 +542,27 @@ class _AdminPanelPageState extends State<AdminPanelPage> with SingleTickerProvid
             child: Column(
               children: [
                 _buildSettingsSection("Password Policy", Icons.vpn_key, [
-                  _buildSwitchRow("Require Uppercase", true),
-                  _buildSwitchRow("Require Lowercase", true),
-                  _buildSwitchRow("Require Numbers", true),
-                  _buildSwitchRow("Require Special Characters", false),
-                  _buildInputRow("Minimum Length", "8 characters"),
-                  _buildInputRow("Password Expiry", "90 days"),
-                  _buildButtonRow("Update Policy"),
+                  _buildSwitchRow("Require Uppercase", _requireUppercase, (v) => setState(() => _requireUppercase = v)),
+                  _buildSwitchRow("Require Lowercase", _requireLowercase, (v) => setState(() => _requireLowercase = v)),
+                  _buildSwitchRow("Require Numbers", _requireNumbers, (v) => setState(() => _requireNumbers = v)),
+                  _buildSwitchRow("Require Special Characters", _requireSpecial, (v) => setState(() => _requireSpecial = v)),
+                  _buildInputRow("Minimum Length", "$_minPasswordLength characters", onChanged: (v) => setState(() => _minPasswordLength = v)),
+                  _buildInputRow("Password Expiry", "$_passwordExpiryDays days", onChanged: (v) => setState(() => _passwordExpiryDays = v)),
+                  _buildButtonRow("Update Policy", _savePasswordPolicy),
                 ]),
                 const SizedBox(height: 20),
                 _buildSettingsSection("Session Security", Icons.timer, [
-                  _buildInputRow("Session Timeout", "30 minutes"),
-                  _buildInputRow("Max Concurrent Sessions", "3 sessions"),
-                  _buildSwitchRow("Require Re-authentication", true),
-                  _buildSwitchRow("Logout on Browser Close", false),
-                  _buildButtonRow("Update Session"),
+                  _buildInputRow("Session Timeout", _sessionTimeout, onChanged: (v) => setState(() => _sessionTimeout = v)),
+                  _buildInputRow("Max Concurrent Sessions", _maxConcurrentSessions, onChanged: (v) => setState(() => _maxConcurrentSessions = v)),
+                  _buildSwitchRow("Require Re-authentication", _requireReauth, (v) => setState(() => _requireReauth = v)),
+                  _buildSwitchRow("Logout on Browser Close", _logoutOnClose, (v) => setState(() => _logoutOnClose = v)),
+                  _buildButtonRow("Update Session", _saveSessionSecurity),
                 ]),
                 const SizedBox(height: 20),
                 _buildSettingsSection("Access Control", Icons.shield, [
-                  _buildInputRow("Max Failed Attempts", "5 attempts"),
-                  _buildInputRow("Lockout Duration", "15 minutes"),
-                  _buildSwitchRow("Two-Factor Authentication", true),
+                  _buildInputRow("Max Failed Attempts", _maxFailedAttempts, onChanged: (v) => setState(() => _maxFailedAttempts = v)),
+                  _buildInputRow("Lockout Duration", _lockoutDuration, onChanged: (v) => setState(() => _lockoutDuration = v)),
+                  _buildSwitchRow("Two-Factor Authentication", _twoFactor, (v) => setState(() => _twoFactor = v)),
                   const Divider(),
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 8.0),
@@ -473,25 +637,25 @@ class _AdminPanelPageState extends State<AdminPanelPage> with SingleTickerProvid
             child: Column(
               children: [
                 _buildSettingsSection("General Configuration", Icons.settings, [
-                  _buildInputRow("Timezone", "Asia/Colombo"),
-                  _buildInputRow("Date Format", "MM/DD/YYYY"),
-                  _buildInputRow("Language", "English"),
-                  _buildSwitchRow("Maintenance Mode", false),
-                  _buildButtonRow("Update General Settings"),
+                  _buildInputRow("Timezone", _timezone, onChanged: (v) => setState(() => _timezone = v)),
+                  _buildInputRow("Date Format", _dateFormat, onChanged: (v) => setState(() => _dateFormat = v)),
+                  _buildInputRow("Language", _language, onChanged: (v) => setState(() => _language = v)),
+                  _buildSwitchRow("Maintenance Mode", _maintenanceMode, (v) => setState(() => _maintenanceMode = v)),
+                  _buildButtonRow("Update General Settings", _saveGeneralSettings),
                 ]),
                 const SizedBox(height: 20),
                 _buildSettingsSection("Work Order Configuration", Icons.assignment, [
-                  _buildInputRow("Default Priority", "Medium"),
-                  _buildSwitchRow("Estimation Required", true),
-                  _buildSwitchRow("Approval Workflow", true),
-                  _buildButtonRow("Update Work Order Settings"),
+                  _buildInputRow("Default Priority", _defaultPriority, onChanged: (v) => setState(() => _defaultPriority = v)),
+                  _buildSwitchRow("Estimation Required", _estimationRequired, (v) => setState(() => _estimationRequired = v)),
+                  _buildSwitchRow("Approval Workflow", _approvalWorkflow, (v) => setState(() => _approvalWorkflow = v)),
+                  _buildButtonRow("Update Work Order Settings", _saveWorkOrderSettings),
                 ]),
                 const SizedBox(height: 20),
                 _buildSettingsSection("Notification Settings", Icons.notifications, [
-                  _buildSwitchRow("Email Notifications", true),
-                  _buildSwitchRow("SMS Notifications", false),
-                  _buildSwitchRow("Push Notifications", true),
-                  _buildButtonRow("Update Notifications"),
+                  _buildSwitchRow("Email Notifications", _emailNotifications, (v) => setState(() => _emailNotifications = v)),
+                  _buildSwitchRow("SMS Notifications", _smsNotifications, (v) => setState(() => _smsNotifications = v)),
+                  _buildSwitchRow("Push Notifications", _pushNotifications, (v) => setState(() => _pushNotifications = v)),
+                  _buildButtonRow("Update Notifications", _saveNotifications),
                 ]),
               ],
             ),
@@ -503,14 +667,14 @@ class _AdminPanelPageState extends State<AdminPanelPage> with SingleTickerProvid
             child: Column(
               children: [
                 _buildSettingsSection("Backup Configuration", Icons.cloud_upload, [
-                  _buildSwitchRow("Auto Backup", true),
-                  _buildInputRow("Frequency", "Daily"),
+                  _buildSwitchRow("Auto Backup", _autoBackup, (v) => setState(() => _autoBackup = v)),
+                  _buildInputRow("Frequency", _backupFrequency, onChanged: (v) => setState(() => _backupFrequency = v)),
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Expanded(child: OutlinedButton(onPressed: () {}, child: const Text("Backup Now"))),
+                      Expanded(child: OutlinedButton(onPressed: _backupNow, child: const Text("Backup Now"))),
                       const SizedBox(width: 8),
-                      Expanded(child: ElevatedButton(onPressed: () {}, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB71C1C), foregroundColor: Colors.white), child: const Text("Configure"))),
+                      Expanded(child: ElevatedButton(onPressed: _configureBackup, style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB71C1C), foregroundColor: Colors.white), child: const Text("Configure"))),
                     ],
                   )
                 ]),
@@ -537,6 +701,37 @@ class _AdminPanelPageState extends State<AdminPanelPage> with SingleTickerProvid
         ],
       ),
     );
+  }
+
+  // -------------------- Activity Logs Helpers --------------------
+  void _filterLogs() {
+    final q = _logSearchController.text.toLowerCase();
+    setState(() {
+      _displayedLogs = _logs.where((l) {
+        final matchesQuery = q.isEmpty || l.action.toLowerCase().contains(q) || l.user.toLowerCase().contains(q) || l.details.toLowerCase().contains(q);
+        final matchesSeverity = _logSeverityFilter == 'All' || l.severity == _logSeverityFilter;
+        return matchesQuery && matchesSeverity;
+      }).toList();
+    });
+  }
+
+  void _refreshLogs() {
+    // For mock: just reassign the original list (in real app, call API)
+    setState(() {
+      _displayedLogs = List<ActivityLogData>.from(_logs);
+      _logSearchController.clear();
+      _logSeverityFilter = 'All';
+    });
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Logs refreshed')));
+  }
+
+  void _exportLogs() {
+    final csv = StringBuffer();
+    csv.writeln('Action,User,Details,Severity,Time');
+    for (final l in _displayedLogs) {
+      csv.writeln('"${l.action}","${l.user}","${l.details}","${l.severity}","${l.time}"');
+    }
+    _showExportDialog('Activity Logs CSV', csv.toString());
   }
 
   // -------------------- Helpers --------------------
@@ -606,27 +801,35 @@ class _AdminPanelPageState extends State<AdminPanelPage> with SingleTickerProvid
     );
   }
 
-  Widget _buildSwitchRow(String label, bool value) {
+  Widget _buildSwitchRow(String label, bool value, ValueChanged<bool>? onChanged) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label), Switch(value: value, activeThumbColor: const Color(0xFFB71C1C), onChanged: (v) {})]),
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label), Switch(value: value, activeThumbColor: const Color(0xFFB71C1C), onChanged: onChanged)]),
     );
   }
 
-  Widget _buildInputRow(String label, String value) {
+  Widget _buildInputRow(String label, String value, {ValueChanged<String>? onChanged}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label), Text(value, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500))]),
+      child: InkWell(
+        onTap: () async {
+          if (onChanged == null) return;
+          final ctl = TextEditingController(text: value);
+          final res = await showDialog<String>(context: context, builder: (ctx) => AlertDialog(title: Text(label), content: TextField(controller: ctl, decoration: InputDecoration(labelText: label)), actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Cancel')), ElevatedButton(onPressed: () => Navigator.of(ctx).pop(ctl.text.trim()), child: const Text('Save'))]));
+          if (res != null) onChanged(res);
+        },
+        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label), Text(value, style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500))]),
+      ),
     );
   }
 
-  Widget _buildButtonRow(String label) {
+  Widget _buildButtonRow(String label, [VoidCallback? onPressed]) {
     return Padding(
       padding: const EdgeInsets.only(top: 8.0),
       child: SizedBox(
         width: double.infinity,
         child: ElevatedButton(
-          onPressed: () {},
+          onPressed: onPressed ?? () { ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$label saved'))); },
           style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB71C1C), foregroundColor: Colors.white),
           child: Text(label),
         ),
@@ -650,5 +853,35 @@ class _AdminPanelPageState extends State<AdminPanelPage> with SingleTickerProvid
       subtitle: Text("https://api.example.com • $statusText", style: const TextStyle(fontSize: 11, color: Colors.grey)),
       trailing: Switch(value: connected, activeThumbColor: Colors.green, onChanged: (v) {}),
     );
+  }
+
+  // -------------------- Security / System Save Handlers --------------------
+  void _savePasswordPolicy() {
+    // In a real app we'd call an API. Here we just show confirmation.
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password policy updated')));
+  }
+
+  void _saveSessionSecurity() {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Session security updated')));
+  }
+
+  void _saveGeneralSettings() {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('General settings updated')));
+  }
+
+  void _saveWorkOrderSettings() {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Work order settings updated')));
+  }
+
+  void _saveNotifications() {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Notification settings updated')));
+  }
+
+  void _backupNow() {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Backup started')));
+  }
+
+  void _configureBackup() {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Open backup configuration')));
   }
 }
