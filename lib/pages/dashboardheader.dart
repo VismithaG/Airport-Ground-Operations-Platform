@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class DashboardHeader extends StatelessWidget implements PreferredSizeWidget {
-  final VoidCallback onLogout;
+  final void Function(BuildContext) onLogout;
   final Map<String, String>? currentUser;
 
   const DashboardHeader({
@@ -28,7 +28,7 @@ class DashboardHeader extends StatelessWidget implements PreferredSizeWidget {
         .join()
         .toUpperCase();
 
-    return LayoutBuilder(builder: (context, constraints) {
+    return LayoutBuilder(builder: (parentContext, constraints) {
       final isCompact = constraints.maxWidth < 480;
       return Container(
         decoration: BoxDecoration(
@@ -79,27 +79,87 @@ class DashboardHeader extends StatelessWidget implements PreferredSizeWidget {
                   ],
                 ),
 
-                // Right: User Avatar / compact menu
+                // Right: User Avatar with profile menu
                 Row(
                   children: [
-                    if (!isCompact)
-                      Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(user['name'] ?? 'User', style: const TextStyle(fontSize: 14, color: Colors.black87)),
-                            Text(user['role'] ?? '', style: const TextStyle(fontSize: 11, color: Colors.grey)),
-                          ],
+                    PopupMenuButton<String>(
+                      onSelected: (value) {
+                        if (value == 'logout') {
+                          debugPrint('DashboardHeader: logout selected');
+                          onLogout(parentContext);
+                        } else if (value == 'profile') {
+                          showDialog(
+                            context: parentContext,
+                            builder: (ctx) => AlertDialog(
+                              title: Text(user['name'] ?? 'User'),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(user['email'] ?? ''),
+                                  const SizedBox(height: 8),
+                                  Text(user['role'] ?? ''),
+                                ],
+                              ),
+                              actions: [
+                                TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Close')),
+                                TextButton(
+                                  onPressed: () {
+                                    debugPrint('DashboardHeader: logout from profile dialog');
+                                    Navigator.of(ctx).pop();
+                                    onLogout(parentContext);
+                                  },
+                                  child: const Text('Logout'),
+                                ),
+                              ],
+                            ),
+                          );
+                        }
+                      },
+                      itemBuilder: (ctx) => [
+                        PopupMenuItem(
+                          value: 'profile',
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              radius: 16,
+                              backgroundColor: Colors.red.shade100,
+                              child: Text(initials, style: TextStyle(color: Colors.red.shade900, fontWeight: FontWeight.bold)),
+                            ),
+                            title: Text(user['name'] ?? 'User'),
+                            subtitle: Text(user['email'] ?? ''),
+                          ),
                         ),
-                      ),
-                    CircleAvatar(
-                      radius: isCompact ? 16 : 18,
-                      backgroundColor: Colors.red.shade100,
-                      child: Text(
-                        initials,
-                        style: TextStyle(color: Colors.red.shade900, fontSize: isCompact ? 12 : 14, fontWeight: FontWeight.bold),
+                        const PopupMenuDivider(),
+                        PopupMenuItem(
+                          value: 'logout',
+                          child: ListTile(leading: Icon(Icons.logout, color: Colors.red), title: const Text('Logout')),
+                        ),
+                      ],
+                      child: Row(
+                        children: [
+                          if (!isCompact)
+                            Padding(
+                              padding: const EdgeInsets.only(right: 8.0),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(user['name'] ?? 'User', style: const TextStyle(fontSize: 14, color: Colors.black87)),
+                                  Text(user['role'] ?? '', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                ],
+                              ),
+                            ),
+                          CircleAvatar(
+                            radius: isCompact ? 16 : 18,
+                            backgroundColor: Colors.red.shade100,
+                            child: Text(
+                              initials,
+                              style: TextStyle(color: Colors.red.shade900, fontSize: isCompact ? 12 : 14, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          const SizedBox(width: 6),
+                          Icon(Icons.keyboard_arrow_down, color: Colors.grey.shade600),
+                        ],
                       ),
                     ),
                   ],

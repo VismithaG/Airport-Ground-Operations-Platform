@@ -30,7 +30,7 @@ class WorkOrder {
 // -------------------- Dashboard Page --------------------
 
 class DashboardPage extends StatefulWidget {
-  final VoidCallback onLogout;
+  final void Function(BuildContext) onLogout;
   final UserInfo? currentUser;
 
   const DashboardPage({
