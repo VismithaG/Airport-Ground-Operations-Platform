@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'pages/loginpage.dart';
 import 'pages/dashboard.dart';
+import 'pages/adminpanel.dart';
 
 void main() {
   runApp(const GroundOperationsApp());
@@ -56,22 +57,39 @@ class _LoginScreenState extends State<LoginScreen> {
       email: email,
     );
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => DashboardPage(
-          onLogout: (ctx) {
-            debugPrint('Main: onLogout called - navigating to LoginScreen');
-            Navigator.pushReplacement(ctx, MaterialPageRoute(builder: (_) => const LoginScreen()));
-          },
-          currentUser: user,
+    if (user.role == 'Administrator') {
+      debugPrint('Main: routing to AdminPanelPage for ${user.email}');
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AdminPanelPage(
+            currentUser: {"name": user.name, "role": user.role, "email": user.email},
+            onLogout: () {
+              debugPrint('Main: admin onLogout called - navigating to LoginScreen');
+              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+            },
+          ),
         ),
-      ),
-    );
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => DashboardPage(
+            onLogout: (ctx) {
+              debugPrint('Main: onLogout called - navigating to LoginScreen');
+              Navigator.pushReplacement(ctx, MaterialPageRoute(builder: (_) => const LoginScreen()));
+            },
+            currentUser: user,
+          ),
+        ),
+      );
+    }
   }
 
   void _demoApproval() {
     final user = UserInfo(name: "Approval Demo", role: "Supervisor", email: "supervisor@demo");
+    // Demo approval remains dashboard
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -88,15 +106,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _demoAdminLogin() {
     final user = UserInfo(name: "Admin Demo", role: "Administrator", email: "admin@demo");
+    // Demo admin should open Admin Panel
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => DashboardPage(
-            onLogout: (ctx) {
-              debugPrint('Main: onLogout called - navigating to LoginScreen');
-              Navigator.pushReplacement(ctx, MaterialPageRoute(builder: (_) => const LoginScreen()));
-            },
-          currentUser: user,
+        builder: (_) => AdminPanelPage(
+          currentUser: {"name": user.name, "role": user.role, "email": user.email},
+          onLogout: () {
+            debugPrint('Main: admin onLogout called - navigating to LoginScreen');
+            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+          },
         ),
       ),
     );
