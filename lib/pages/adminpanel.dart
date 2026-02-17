@@ -205,6 +205,31 @@ class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStat
     }
   }
 
+  Future<void> _viewUser(UserData user) async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(user.name),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Email: ${user.email}'),
+            const SizedBox(height: 8),
+            Text('Role: ${user.role}'),
+            const SizedBox(height: 8),
+            Text('Department: ${user.department}'),
+            const SizedBox(height: 8),
+            Text('Status: ${user.status}'),
+            const SizedBox(height: 8),
+            Text('Last login: ${user.lastLogin}'),
+          ],
+        ),
+        actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Close'))],
+      ),
+    );
+  }
+
   // -------------------- Build --------------------
   @override
   Widget build(BuildContext context) {
@@ -308,59 +333,34 @@ class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStat
           ]),
           const SizedBox(height: 16),
 
-          // Table or Cards
-          if (!isNarrow)
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(minWidth: 900),
-                child: DataTable(
-                  headingRowColor: WidgetStateProperty.all(Colors.grey[50]),
-                  columns: const [
-                    DataColumn(label: Text('User', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Role', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Department', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Last Login', style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
-                  ],
-                  rows: _displayedUsers.map((user) {
-                    return DataRow(cells: [
-                      DataCell(Row(children: [CircleAvatar(radius: 16, backgroundColor: Colors.red.shade50, child: Text(user.name[0], style: const TextStyle(color: Colors.red, fontSize: 12))), const SizedBox(width: 12), Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [Text(user.name, style: const TextStyle(fontWeight: FontWeight.w600)), Text(user.email, style: const TextStyle(fontSize: 11, color: Colors.grey))])])),
-                      DataCell(Text(user.role)),
-                      DataCell(Text(user.department)),
-                      DataCell(_buildStatusBadge(user.status)),
-                      DataCell(Text(user.lastLogin)),
-                      DataCell(Row(children: [IconButton(icon: const Icon(Icons.visibility_outlined, size: 18, color: Colors.grey), onPressed: () {}), IconButton(icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.blue), onPressed: () => _showUserDialog(editUser: user)), IconButton(icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red), onPressed: () => _confirmDeleteUser(user))])),
-                    ]);
-                  }).toList(),
-                ),
+          // Table (wide) or horizontally-scrollable table (mobile)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 900),
+              child: DataTable(
+                headingRowColor: MaterialStateProperty.all(Colors.grey[50]),
+                columns: const [
+                  DataColumn(label: Text('User', style: TextStyle(fontWeight: FontWeight.bold))),
+                  DataColumn(label: Text('Role', style: TextStyle(fontWeight: FontWeight.bold))),
+                  DataColumn(label: Text('Department', style: TextStyle(fontWeight: FontWeight.bold))),
+                  DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
+                  DataColumn(label: Text('Last Login', style: TextStyle(fontWeight: FontWeight.bold))),
+                  DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+                ],
+                rows: _displayedUsers.map((user) {
+                  return DataRow(cells: [
+                    DataCell(Row(children: [CircleAvatar(radius: 16, backgroundColor: Colors.red.shade50, child: Text(user.name[0], style: const TextStyle(color: Colors.red, fontSize: 12))), const SizedBox(width: 12), Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [Text(user.name, style: const TextStyle(fontWeight: FontWeight.w600)), Text(user.email, style: const TextStyle(fontSize: 11, color: Colors.grey))])])),
+                    DataCell(Text(user.role)),
+                    DataCell(Text(user.department)),
+                    DataCell(_buildStatusBadge(user.status)),
+                    DataCell(Text(user.lastLogin)),
+                    DataCell(Row(children: [IconButton(icon: const Icon(Icons.visibility_outlined, size: 18, color: Colors.grey), onPressed: () => _viewUser(user)), IconButton(icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.blue), onPressed: () => _showUserDialog(editUser: user)), IconButton(icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red), onPressed: () => _confirmDeleteUser(user))])),
+                  ]);
+                }).toList(),
               ),
-            )
-          else
-            Column(
-              children: _displayedUsers
-                  .map((user) => Card(
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        child: ListTile(
-                          leading: CircleAvatar(backgroundColor: Colors.red.shade50, child: Text(user.name[0])),
-                          title: Text(user.name),
-                          subtitle: Text('${user.email}\n${user.role}'),
-                          isThreeLine: true,
-                          trailing: PopupMenuButton<String>(
-                            onSelected: (v) {
-                              if (v == 'edit') _showUserDialog(editUser: user);
-                              if (v == 'delete') _confirmDeleteUser(user);
-                            },
-                            itemBuilder: (_) => [
-                              const PopupMenuItem(value: 'edit', child: Text('Edit')),
-                              const PopupMenuItem(value: 'delete', child: Text('Delete')),
-                            ],
-                          ),
-                        ),
-                      ))
-                  .toList(),
             ),
+          ),
         ]),
       );
     });
@@ -391,7 +391,7 @@ class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStat
 
           // Table or Card list
           if (!isNarrow)
-            SingleChildScrollView(scrollDirection: Axis.horizontal, child: ConstrainedBox(constraints: const BoxConstraints(minWidth: 900), child: DataTable(headingRowColor: WidgetStateProperty.all(Colors.grey[50]), columns: const [DataColumn(label: Text('Activity', style: TextStyle(fontWeight: FontWeight.bold))), DataColumn(label: Text('User', style: TextStyle(fontWeight: FontWeight.bold))), DataColumn(label: Text('Details', style: TextStyle(fontWeight: FontWeight.bold))), DataColumn(label: Text('Severity', style: TextStyle(fontWeight: FontWeight.bold))), DataColumn(label: Text('Time Stamp', style: TextStyle(fontWeight: FontWeight.bold)))], rows: _displayedLogs.map((log) {
+            SingleChildScrollView(scrollDirection: Axis.horizontal, child: ConstrainedBox(constraints: const BoxConstraints(minWidth: 900), child: DataTable(headingRowColor: MaterialStateProperty.all(Colors.grey[50]), columns: const [DataColumn(label: Text('Activity', style: TextStyle(fontWeight: FontWeight.bold))), DataColumn(label: Text('User', style: TextStyle(fontWeight: FontWeight.bold))), DataColumn(label: Text('Details', style: TextStyle(fontWeight: FontWeight.bold))), DataColumn(label: Text('Severity', style: TextStyle(fontWeight: FontWeight.bold))), DataColumn(label: Text('Time Stamp', style: TextStyle(fontWeight: FontWeight.bold)))], rows: _displayedLogs.map((log) {
               return DataRow(cells: [
                 DataCell(Row(children: [Icon(log.icon, size: 18, color: Colors.grey[700]), const SizedBox(width: 8), Text(log.action, style: const TextStyle(fontWeight: FontWeight.w600))])),
                 DataCell(Row(children: [CircleAvatar(radius: 12, backgroundColor: Colors.grey[200], child: Text(log.user[0], style: const TextStyle(fontSize: 10, color: Colors.black87))), const SizedBox(width: 8), Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [Text(log.user, style: const TextStyle(fontWeight: FontWeight.w500))])])),
