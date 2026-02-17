@@ -30,7 +30,7 @@ class ActivityLogData {
 
 class AdminPanelPage extends StatefulWidget {
   final Map<String, String>? currentUser;
-  final VoidCallback? onLogout;
+  final void Function(BuildContext)? onLogout;
 
   const AdminPanelPage({super.key, this.currentUser, this.onLogout});
 
@@ -213,13 +213,51 @@ class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStat
       appBar: AppBar(
         title: Text('Admin - $userName'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            tooltip: 'Logout',
-            onPressed: () {
-              if (widget.onLogout != null) return widget.onLogout!();
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SizedBox()));
-            },
+          Padding(
+            padding: const EdgeInsets.only(right: 12.0),
+            child: PopupMenuButton<String>(
+              onSelected: (v) {
+                if (v == 'profile') {
+                  showDialog<void>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Profile'),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          CircleAvatar(radius: 28, child: Text(userName.isNotEmpty ? userName[0] : 'A')),
+                          const SizedBox(height: 12),
+                          Text(userName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 6),
+                          Text(widget.currentUser?['email'] ?? '', style: const TextStyle(color: Colors.grey)),
+                          const SizedBox(height: 6),
+                          Text(widget.currentUser?['role'] ?? '', style: const TextStyle(color: Colors.grey)),
+                        ],
+                      ),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Close')),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(ctx).pop();
+                            if (widget.onLogout != null) widget.onLogout!(context);
+                          },
+                          child: const Text('Logout'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+                if (v == 'logout') {
+                  if (widget.onLogout != null) return widget.onLogout!(context);
+                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SizedBox()));
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'profile', child: Text('Profile')),
+                PopupMenuItem(value: 'logout', child: Text('Logout')),
+              ],
+              child: CircleAvatar(radius: 18, child: Text(userName.isNotEmpty ? userName[0] : 'A')),
+            ),
           ),
         ],
         bottom: TabBar(controller: _tabController, tabs: const [Tab(text: 'Users'), Tab(text: 'Activity'), Tab(text: 'Security'), Tab(text: 'System')]),

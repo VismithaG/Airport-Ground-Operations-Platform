@@ -64,9 +64,9 @@ class _LoginScreenState extends State<LoginScreen> {
         MaterialPageRoute(
           builder: (_) => AdminPanelPage(
             currentUser: {"name": user.name, "role": user.role, "email": user.email},
-            onLogout: () {
+            onLogout: (ctx) {
               debugPrint('Main: admin onLogout called - navigating to LoginScreen');
-              Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+              Navigator.pushReplacement(ctx, MaterialPageRoute(builder: (_) => const LoginScreen()));
             },
           ),
         ),
@@ -112,9 +112,9 @@ class _LoginScreenState extends State<LoginScreen> {
       MaterialPageRoute(
         builder: (_) => AdminPanelPage(
           currentUser: {"name": user.name, "role": user.role, "email": user.email},
-          onLogout: () {
+          onLogout: (ctx) {
             debugPrint('Main: admin onLogout called - navigating to LoginScreen');
-            Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+            Navigator.pushReplacement(ctx, MaterialPageRoute(builder: (_) => const LoginScreen()));
           },
         ),
       ),
