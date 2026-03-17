@@ -1,1376 +1,602 @@
-// lib/admin_panel.dart
-import 'package:flutter/material.dart';
+// lib/pages/adminpanel.dart
+// Recreated Admin Panel with 4 tabs: User Management, Activity Logs, Security, System Settings.
 
-// ----------------------------
-// Models & Mock Data (replace with your real data files)
-// ----------------------------
-class UserModel {
-  final String id;
+// ignore_for_file: curly_braces_in_flow_control_structures, deprecated_member_use, duplicate_ignore
+
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+class UserData {
   final String name;
   final String email;
   final String role;
   final String department;
-  final String status;
-  final String? lastLogin;
+  final String status; // Active, Inactive, Suspended
+  final String lastLogin;
 
-  UserModel({
-    required this.id,
-    required this.name,
-    required this.email,
-    required this.role,
-    required this.department,
-    required this.status,
-    this.lastLogin,
-  });
+  UserData(this.name, this.email, this.role, this.department, this.status, this.lastLogin);
 }
 
-class ActivityLog {
-  final String id;
+class ActivityLogData {
   final String action;
   final String user;
   final String details;
-  final String type;
-  final String severity;
-  final String timestamp;
+  final String severity; // Info, Warning, High
+  final String time;
+  final IconData icon;
 
-  ActivityLog({
-    required this.id,
-    required this.action,
-    required this.user,
-    required this.details,
-    required this.type,
-    required this.severity,
-    required this.timestamp,
-  });
+  ActivityLogData(this.action, this.user, this.details, this.severity, this.time, this.icon);
 }
 
-class PasswordPolicy {
-  final int minLength;
-  final bool requireUppercase;
-  final bool requireLowercase;
-  final bool requireNumbers;
-  final bool requireSpecialChars;
-  final int passwordExpiry;
-  final int preventReuse;
-
-  PasswordPolicy({
-    required this.minLength,
-    required this.requireUppercase,
-    required this.requireLowercase,
-    required this.requireNumbers,
-    required this.requireSpecialChars,
-    required this.passwordExpiry,
-    required this.preventReuse,
-  });
-}
-
-class SecuritySettings {
-  final PasswordPolicy passwordPolicy;
-  final SessionSecurity sessionSecurity;
-  final AccessControl accessControl;
-  final AuditSettings auditSettings;
-
-  SecuritySettings({
-    required this.passwordPolicy,
-    required this.sessionSecurity,
-    required this.accessControl,
-    required this.auditSettings,
-  });
-}
-
-class SessionSecurity {
-  final int sessionTimeout;
-  final int maxConcurrentSessions;
-  final bool requireReauth;
-  final bool logoutOnClose;
-
-  SessionSecurity({
-    required this.sessionTimeout,
-    required this.maxConcurrentSessions,
-    required this.requireReauth,
-    required this.logoutOnClose,
-  });
-}
-
-class AccessControl {
-  final int maxFailedAttempts;
-  final int lockoutDuration;
-  final bool enableTwoFactor;
-  final List<String> allowedIpRanges;
-
-  AccessControl({
-    required this.maxFailedAttempts,
-    required this.lockoutDuration,
-    required this.enableTwoFactor,
-    required this.allowedIpRanges,
-  });
-}
-
-class AuditSettings {
-  final int logRetention;
-  final bool enableRealTimeAlerts;
-  final int alertThreshold;
-  final bool exportEnabled;
-
-  AuditSettings({
-    required this.logRetention,
-    required this.enableRealTimeAlerts,
-    required this.alertThreshold,
-    required this.exportEnabled,
-  });
-}
-
-class WorkOrderSettings {
-  final bool autoAssignment;
-  final List<String> priorityLevels;
-  final String defaultPriority;
-  final bool estimationRequired;
-  final int maxActiveOrders;
-  final bool approvalWorkflow;
-
-  WorkOrderSettings({
-    required this.autoAssignment,
-    required this.priorityLevels,
-    required this.defaultPriority,
-    required this.estimationRequired,
-    required this.maxActiveOrders,
-    required this.approvalWorkflow,
-  });
-}
-
-class NotificationsSettings {
-  final bool emailEnabled;
-  final bool smsEnabled;
-  final bool pushEnabled;
-  final int escalationTime;
-  final int reminderInterval;
-  final QuietHours quietHours;
-
-  NotificationsSettings({
-    required this.emailEnabled,
-    required this.smsEnabled,
-    required this.pushEnabled,
-    required this.escalationTime,
-    required this.reminderInterval,
-    required this.quietHours,
-  });
-}
-
-class QuietHours {
-  final bool enabled;
-  final String start;
-  final String end;
-  QuietHours({required this.enabled, required this.start, required this.end});
-}
-
-class BackupSettings {
-  final bool autoBackup;
-  final String frequency;
-  final int retentionDays;
-  final String location;
-  final String? lastBackup;
-  final String? nextBackup;
-
-  BackupSettings({
-    required this.autoBackup,
-    required this.frequency,
-    required this.retentionDays,
-    required this.location,
-    this.lastBackup,
-    this.nextBackup,
-  });
-}
-
-class IntegrationInfo {
-  final String endpoint;
-  final String status;
-  final bool enabled;
-  final String? lastSync;
-
-  IntegrationInfo({
-    required this.endpoint,
-    required this.status,
-    required this.enabled,
-    this.lastSync,
-  });
-}
-
-class SystemSettings {
-  final GeneralSettings general;
-  final WorkOrderSettings workOrders;
-  final NotificationsSettings notifications;
-  final BackupSettings backup;
-  final Map<String, IntegrationInfo> integrations;
-
-  SystemSettings({
-    required this.general,
-    required this.workOrders,
-    required this.notifications,
-    required this.backup,
-    required this.integrations,
-  });
-}
-
-class GeneralSettings {
-  final String systemName;
-  final String timezone;
-  final String dateFormat;
-  final String timeFormat;
-  final String language;
-  final bool maintenanceMode;
-
-  GeneralSettings({
-    required this.systemName,
-    required this.timezone,
-    required this.dateFormat,
-    required this.timeFormat,
-    required this.language,
-    required this.maintenanceMode,
-  });
-}
-
-// --- Minimal mock data to make the file runnable (replace with your own)
-final List<UserModel> mockUsers = [
-  UserModel(
-    id: 'u1',
-    name: 'Alice Johnson',
-    email: 'alice@airport.com',
-    role: 'Supervisor',
-    department: 'Ground Ops',
-    status: 'active',
-    lastLogin: DateTime.now().subtract(const Duration(hours: 4)).toIso8601String(),
-  ),
-  UserModel(
-    id: 'u2',
-    name: 'Bob Smith',
-    email: 'bob@airport.com',
-    role: 'Technician',
-    department: 'Maintenance',
-    status: 'inactive',
-    lastLogin: DateTime.now().subtract(const Duration(days: 3)).toIso8601String(),
-  ),
-  UserModel(
-    id: 'u3',
-    name: 'Admin User',
-    email: 'admin@airport.com',
-    role: 'Administrator',
-    department: 'IT',
-    status: 'active',
-    lastLogin: DateTime.now().subtract(const Duration(minutes: 15)).toIso8601String(),
-  ),
-];
-
-final List<ActivityLog> mockActivityLogs = [
-  ActivityLog(
-    id: 'a1',
-    action: 'User login',
-    user: 'Alice Johnson',
-    details: 'Successful login from 192.168.1.10',
-    type: 'authentication',
-    severity: 'info',
-    timestamp: DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
-  ),
-  ActivityLog(
-    id: 'a2',
-    action: 'Work order created',
-    user: 'Bob Smith',
-    details: 'WO#12345: Replace brake pads',
-    type: 'work_order',
-    severity: 'warning',
-    timestamp: DateTime.now().subtract(const Duration(days: 1)).toIso8601String(),
-  ),
-  ActivityLog(
-    id: 'a3',
-    action: 'Failed login attempts',
-    user: 'System',
-    details: 'Multiple failed logins from 10.0.0.5',
-    type: 'security',
-    severity: 'high',
-    timestamp: DateTime.now().subtract(const Duration(hours: 5)).toIso8601String(),
-  ),
-];
-
-final SecuritySettings securitySettings = SecuritySettings(
-  passwordPolicy: PasswordPolicy(
-    minLength: 8,
-    requireUppercase: true,
-    requireLowercase: true,
-    requireNumbers: true,
-    requireSpecialChars: false,
-    passwordExpiry: 90,
-    preventReuse: 5,
-  ),
-  sessionSecurity: SessionSecurity(
-    sessionTimeout: 30,
-    maxConcurrentSessions: 3,
-    requireReauth: true,
-    logoutOnClose: false,
-  ),
-  accessControl: AccessControl(
-    maxFailedAttempts: 5,
-    lockoutDuration: 30,
-    enableTwoFactor: true,
-    allowedIpRanges: ['192.168.0.0/24', '10.0.0.0/16'],
-  ),
-  auditSettings: AuditSettings(
-    logRetention: 365,
-    enableRealTimeAlerts: true,
-    alertThreshold: 10,
-    exportEnabled: false,
-  ),
-);
-
-final SystemSettings systemSettings = SystemSettings(
-  general: GeneralSettings(
-    systemName: 'Airport Ops',
-    timezone: 'Asia/Colombo',
-    dateFormat: 'yyyy-MM-dd',
-    timeFormat: 'HH:mm',
-    language: 'English',
-    maintenanceMode: false,
-  ),
-  workOrders: WorkOrderSettings(
-    autoAssignment: true,
-    priorityLevels: ['Low', 'Medium', 'High'],
-    defaultPriority: 'Medium',
-    estimationRequired: false,
-    maxActiveOrders: 50,
-    approvalWorkflow: true,
-  ),
-  notifications: NotificationsSettings(
-    emailEnabled: true,
-    smsEnabled: false,
-    pushEnabled: true,
-    escalationTime: 30,
-    reminderInterval: 60,
-    quietHours: QuietHours(enabled: true, start: '22:00', end: '06:00'),
-  ),
-  backup: BackupSettings(
-    autoBackup: true,
-    frequency: 'daily',
-    retentionDays: 30,
-    location: 'us-east-1',
-    lastBackup: DateTime.now().subtract(const Duration(hours: 12)).toIso8601String(),
-    nextBackup: DateTime.now().add(const Duration(hours: 12)).toIso8601String(),
-  ),
-  integrations: {
-    'PaymentAPI': IntegrationInfo(
-      endpoint: 'https://api.payment.example',
-      status: 'connected',
-      enabled: true,
-      lastSync: DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
-    ),
-    'WeatherService': IntegrationInfo(
-      endpoint: 'https://api.weather.example',
-      status: 'disconnected',
-      enabled: false,
-      lastSync: null,
-    ),
-  },
-);
-
-// ----------------------------
-// Admin Panel Widget
-// ----------------------------
 class AdminPanelPage extends StatefulWidget {
-  final UserModel currentUser;
-  final VoidCallback onLogout;
-  final void Function(String userId) onNavigateToUserDetails;
-  final List<UserModel> users;
-  final List<ActivityLog> activityLogs;
-  final SecuritySettings security;
-  final SystemSettings settings;
+  final Map<String, String>? currentUser;
+  final void Function(BuildContext)? onLogout;
 
-  AdminPanelPage({
-    super.key,
-    required this.currentUser,
-    required this.onLogout,
-    required this.onNavigateToUserDetails,
-    this.users = const [],
-    this.activityLogs = const [],
-    SecuritySettings? security,
-    SystemSettings? settings,
-  })  : security = security ?? securitySettings,
-        settings = settings ?? systemSettings;
+  const AdminPanelPage({super.key, this.currentUser, this.onLogout});
 
   @override
   State<AdminPanelPage> createState() => _AdminPanelPageState();
 }
 
-class _AdminPanelPageState extends State<AdminPanelPage> with SingleTickerProviderStateMixin {
-  // Filters & state
-  String searchQuery = '';
-  String statusFilter = 'all';
-  String departmentFilter = 'all';
+class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStateMixin {
+  late final TabController _tabController;
 
-  String activitySearchQuery = '';
-  String activityTypeFilter = 'all';
-  String activitySeverityFilter = 'all';
+  // Mock data stores
+  final List<UserData> _users = List.generate(
+    10,
+    (i) => UserData('User $i', 'user$i@example.com', i % 3 == 0 ? 'Administrator' : 'Technician', 'Ground Ops', i % 4 == 0 ? 'Suspended' : 'Active', '2026-02-1${i + 1}'),
+  );
 
-  late TabController _tabController;
+  final List<ActivityLogData> _logs = List.generate(
+    16,
+    (i) => ActivityLogData('Action $i', 'User ${i % 10}', 'Details for action $i', i % 3 == 0 ? 'High' : (i % 3 == 1 ? 'Warning' : 'Info'), '2026-02-1${i + 1} 10:0$i', Icons.info_outline),
+  );
 
-  late List<UserModel> _users;
-  late List<ActivityLog> _activityLogs;
-  late SecuritySettings _security;
-  late SystemSettings _settings;
+  // UI state
+  late List<UserData> _displayedUsers;
+  late List<ActivityLogData> _displayedLogs;
+  final TextEditingController _userSearchController = TextEditingController();
+  final TextEditingController _logSearchController = TextEditingController();
+  String _userFilterStatus = 'All';
+  String _logSeverityFilter = 'All';
+
+  // Security/System settings (mock)
+  bool _requireUppercase = true;
+  bool _requireLowercase = true;
+  bool _requireNumbers = true;
+  bool _requireSpecial = false;
+  int _minPasswordLength = 8;
+  int _passwordExpiryDays = 90;
+
+  String _sessionTimeout = '30m';
+  String _maxConcurrentSessions = '3';
+  bool _requireReauth = false;
+  bool _logoutOnClose = false;
+
+  int _maxFailedAttempts = 5;
+  String _lockoutDuration = '15m';
+  bool _twoFactor = false;
+
+  String _companyName = 'AGO Platform';
+  String _defaultTimezone = 'UTC';
+  bool _maintenanceMode = false;
+  bool _autoAssign = true;
+  String _defaultPriority = 'Medium';
+
+  bool _emailNotifications = true;
+  bool _smsNotifications = false;
+  bool _pushNotifications = true;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-
-    // Set defaults from widget or use mock data
-    _users = widget.users.isEmpty ? mockUsers : widget.users;
-    _activityLogs = widget.activityLogs.isEmpty ? mockActivityLogs : widget.activityLogs;
-    _security = widget.security;
-    _settings = widget.settings;
+    _displayedUsers = List.from(_users);
+    _displayedLogs = List.from(_logs);
   }
 
   @override
   void dispose() {
     _tabController.dispose();
+    _userSearchController.dispose();
+    _logSearchController.dispose();
     super.dispose();
   }
 
-  // Derived lists
-  List<UserModel> get _filteredUsers {
-    return _users
-        .where((u) =>
-            (searchQuery.isEmpty || u.name.toLowerCase().contains(searchQuery.toLowerCase()) || u.email.toLowerCase().contains(searchQuery.toLowerCase())) &&
-            (statusFilter == 'all' || u.status == statusFilter) &&
-            (departmentFilter == 'all' || u.department == departmentFilter))
-        .toList();
+  // -------------------- Helpers --------------------
+  void _filterUsers() {
+    final q = _userSearchController.text.toLowerCase();
+    setState(() {
+      _displayedUsers = _users.where((u) {
+        final matchesQuery = q.isEmpty || u.name.toLowerCase().contains(q) || u.email.toLowerCase().contains(q) || u.role.toLowerCase().contains(q);
+        final matchesStatus = _userFilterStatus == 'All' || u.status == _userFilterStatus;
+        return matchesQuery && matchesStatus;
+      }).toList();
+    });
   }
 
-  List<ActivityLog> get _filteredActivityLogs {
-    return _activityLogs
-        .where((log) =>
-            (activitySearchQuery.isEmpty || log.action.toLowerCase().contains(activitySearchQuery.toLowerCase()) || log.details.toLowerCase().contains(activitySearchQuery.toLowerCase())) &&
-            (activityTypeFilter == 'all' || log.type == activityTypeFilter) &&
-            (activitySeverityFilter == 'all' || log.severity == activitySeverityFilter))
-        .toList();
+  void _filterLogs() {
+    final q = _logSearchController.text.toLowerCase();
+    setState(() {
+      _displayedLogs = _logs.where((l) {
+        final matchesQuery = q.isEmpty || l.action.toLowerCase().contains(q) || l.user.toLowerCase().contains(q) || l.details.toLowerCase().contains(q);
+        final matchesSeverity = _logSeverityFilter == 'All' || l.severity == _logSeverityFilter;
+        return matchesQuery && matchesSeverity;
+      }).toList();
+    });
   }
 
-  // Helper derived stats
-  Map<String, int> get userStats {
-    final total = _users.length;
-    final active = _users.where((u) => u.status == 'active').length;
-    final inactive = _users.where((u) => u.status == 'inactive').length;
-    final suspended = _users.where((u) => u.status == 'suspended').length;
-    return {'total': total, 'active': active, 'inactive': inactive, 'suspended': suspended};
-  }
-
-  Map<String, int> get activityStats {
-    final total = _activityLogs.length;
-    final high = _activityLogs.where((a) => a.severity == 'high').length;
-    final warning = _activityLogs.where((a) => a.severity == 'warning').length;
-    final info = _activityLogs.where((a) => a.severity == 'info').length;
-    return {'total': total, 'high': high, 'warning': warning, 'info': info};
-  }
-
-  List<String> get departments {
-    final set = _users.map((u) => u.department).where((d) => d.isNotEmpty).toSet();
-    return set.toList();
-  }
-
-  // Formatting helpers
-  String formatTimestamp(String iso) {
-    try {
-      final dt = DateTime.parse(iso).toLocal();
-      return '${dt.year.toString().padLeft(4, '0')}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-    } catch (_) {
-      return iso;
+  Future<void> _exportUsers() async {
+    final csv = StringBuffer();
+    csv.writeln('name,email,role,department,status,lastLogin');
+    for (var u in _displayedUsers) {
+      csv.writeln('${u.name},${u.email},${u.role},${u.department},${u.status},${u.lastLogin}');
     }
+    await Clipboard.setData(ClipboardData(text: csv.toString()));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Users exported to clipboard')));
   }
 
-  Widget severityBadge(String severity) {
-    Color bg;
-    Color text;
-    String label;
-    switch (severity) {
-      case 'high':
-        bg = Colors.red.shade100;
-        text = Colors.red.shade800;
-        label = 'High';
-        break;
-      case 'warning':
-        bg = Colors.yellow.shade100;
-        text = Colors.yellow.shade800;
-        label = 'Warning';
-        break;
-      case 'info':
-        bg = Colors.blue.shade50;
-        text = Colors.blue.shade800;
-        label = 'Info';
-        break;
-      default:
-        bg = Colors.grey.shade100;
-        text = Colors.grey.shade800;
-        label = 'Unknown';
+  Future<void> _exportLogs() async {
+    final csv = StringBuffer();
+    csv.writeln('action,user,details,severity,time');
+    for (var l in _displayedLogs) {
+      csv.writeln('${l.action},${l.user},${l.details},${l.severity},${l.time}');
     }
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
-      child: Text(label, style: TextStyle(color: text, fontSize: 12)),
-    );
+    await Clipboard.setData(ClipboardData(text: csv.toString()));
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Logs exported to clipboard')));
   }
 
-  Icon getActivityIcon(String type) {
-    switch (type) {
-      case 'authentication':
-        return const Icon(Icons.vpn_key, size: 16);
-      case 'work_order':
-        return const Icon(Icons.build_circle_outlined, size: 16);
-      case 'approval':
-        return const Icon(Icons.check_circle_outline, size: 16);
-      case 'user_management':
-        return const Icon(Icons.group_outlined, size: 16);
-      case 'system':
-        return const Icon(Icons.storage_outlined, size: 16);
-      case 'security':
-        return const Icon(Icons.shield_outlined, size: 16);
-      case 'compliance':
-        return const Icon(Icons.dataset_outlined, size: 16);
-      default:
-        return const Icon(Icons.info_outline, size: 16);
-    }
-  }
+  Future<void> _showUserDialog({UserData? editUser}) async {
+    final nameCtl = TextEditingController(text: editUser?.name ?? '');
+    final emailCtl = TextEditingController(text: editUser?.email ?? '');
+    final roleCtl = TextEditingController(text: editUser?.role ?? 'Service Technician');
+    final deptCtl = TextEditingController(text: editUser?.department ?? 'Ground Operations');
+    String status = editUser?.status ?? 'Active';
 
-  Color severityColor(String severity) {
-    switch (severity) {
-      case 'high':
-        return Colors.red.shade600;
-      case 'warning':
-        return Colors.orange.shade600;
-      case 'info':
-        return Colors.blue.shade600;
-      default:
-        return Colors.grey;
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // Use DefaultTabController for tabs
-    return Scaffold(
-      appBar: AppBar(
-        elevation: 1,
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        title: Row(
-          children: [
-            const Icon(Icons.shield_outlined, color: Colors.blueAccent),
-            const SizedBox(width: 8),
-            const Text('Admin Panel', style: TextStyle(fontWeight: FontWeight.w600)),
-            const SizedBox(width: 12),
-            Container(
-              margin: const EdgeInsets.only(left: 8),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text('System Administrator', style: TextStyle(fontSize: 12)),
-            ),
-          ],
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(editUser == null ? 'Add User' : 'Edit User'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(controller: nameCtl, decoration: const InputDecoration(labelText: 'Full Name')),
+              TextField(controller: emailCtl, decoration: const InputDecoration(labelText: 'Email')),
+              TextField(controller: roleCtl, decoration: const InputDecoration(labelText: 'Role')),
+              TextField(controller: deptCtl, decoration: const InputDecoration(labelText: 'Department')),
+              DropdownButtonFormField<String>(initialValue: status, items: const ['Active', 'Inactive', 'Suspended'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(), onChanged: (v) => status = v ?? status),
+            ],
+          ),
         ),
         actions: [
-          Center(child: Text('Welcome, ${widget.currentUser.name}', style: const TextStyle(fontSize: 14))),
-          const SizedBox(width: 12),
-          TextButton.icon(
-            onPressed: widget.onLogout,
-            icon: const Icon(Icons.logout, size: 18),
-            label: const Text('Logout'),
+          TextButton(onPressed: () => Navigator.of(ctx).pop(false), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: Text(editUser == null ? 'Add' : 'Save'),
           ),
-          const SizedBox(width: 8),
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          tabs: const [
-            Tab(icon: Icon(Icons.group_outlined), text: 'User Management'),
-            Tab(icon: Icon(Icons.history), text: 'Activity Logs'),
-            Tab(icon: Icon(Icons.security), text: 'Security'),
-            Tab(icon: Icon(Icons.settings), text: 'System Settings'),
+      ),
+    );
+
+    if (result == true) {
+      final newUser = UserData(nameCtl.text, emailCtl.text, roleCtl.text, deptCtl.text, status, DateTime.now().toIso8601String());
+      setState(() {
+        if (editUser != null) {
+          final idx = _users.indexOf(editUser);
+          if (idx >= 0) _users[idx] = newUser;
+        } else {
+          _users.insert(0, newUser);
+        }
+        _filterUsers();
+      });
+    }
+  }
+
+  Future<void> _confirmDeleteUser(UserData user) async {
+    final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(title: const Text('Delete user'), content: Text('Delete ${user.name}?'), actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')), ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete'))]));
+    if (ok == true) {
+      setState(() {
+        _users.remove(user);
+        _filterUsers();
+      });
+    }
+  }
+
+  Future<void> _viewUser(UserData user) async {
+    await showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(user.name),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text('Email: ${user.email}'),
+            const SizedBox(height: 8),
+            Text('Role: ${user.role}'),
+            const SizedBox(height: 8),
+            Text('Department: ${user.department}'),
+            const SizedBox(height: 8),
+            Text('Status: ${user.status}'),
+            const SizedBox(height: 8),
+            Text('Last login: ${user.lastLogin}'),
           ],
         ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildUsersTab(context),
-          _buildActivityTab(context),
-          _buildSecurityTab(context),
-          _buildSettingsTab(context),
-        ],
+        actions: [TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Close'))],
       ),
     );
   }
 
-  Widget _buildUsersTab(BuildContext context) {
-    final stats = userStats;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // Stats row
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _StatsCard(title: 'Total Users', value: stats['total'].toString(), icon: Icons.group, color: Colors.blue),
-              const SizedBox(width: 12),
-              _StatsCard(title: 'Active Users', value: stats['active'].toString(), icon: Icons.check_circle, color: Colors.green),
-              const SizedBox(width: 12),
-              _StatsCard(title: 'Inactive Users', value: stats['inactive'].toString(), icon: Icons.warning_amber_outlined, color: Colors.orange),
-              const SizedBox(width: 12),
-              _StatsCard(title: 'Suspended', value: stats['suspended'].toString(), icon: Icons.block, color: Colors.red),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                children: [
-                  // Header with actions
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text('User Management', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                          SizedBox(height: 4),
-                          Text('Manage user accounts, roles, and permissions', style: TextStyle(color: Colors.grey)),
-                        ],
-                      ),
-                      Row(
+  // -------------------- Build --------------------
+  @override
+  Widget build(BuildContext context) {
+    final userName = widget.currentUser?['name'] ?? 'Administrator';
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Admin - $userName'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12.0),
+            child: PopupMenuButton<String>(
+              onSelected: (v) {
+                if (v == 'profile') {
+                  showDialog<void>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Profile'),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          TextButton.icon(onPressed: () {}, icon: const Icon(Icons.download_outlined), label: const Text('Export')),
-                          const SizedBox(width: 8),
-                          ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.person_add), label: const Text('Add User')),
+                          CircleAvatar(radius: 28, child: Text(userName.isNotEmpty ? userName[0] : 'A')),
+                          const SizedBox(height: 12),
+                          Text(userName, style: const TextStyle(fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 6),
+                          Text(widget.currentUser?['email'] ?? '', style: const TextStyle(color: Colors.grey)),
+                          const SizedBox(height: 6),
+                          Text(widget.currentUser?['role'] ?? '', style: const TextStyle(color: Colors.grey)),
                         ],
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Filters row
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          decoration: InputDecoration(
-                            prefixIcon: const Icon(Icons.search),
-                            hintText: 'Search users...',
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                            contentPadding: const EdgeInsets.symmetric(vertical: 0, horizontal: 12),
-                          ),
-                          onChanged: (v) => setState(() => searchQuery = v),
+                      actions: [
+                        TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Close')),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(ctx).pop();
+                            if (widget.onLogout != null) widget.onLogout!(context);
+                          },
+                          child: const Text('Logout'),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        width: 150,
-                        child: DropdownButtonFormField<String>(
-                          initialValue: statusFilter,
-                          items: const [
-                            DropdownMenuItem(value: 'all', child: Text('All Status')),
-                            DropdownMenuItem(value: 'active', child: Text('Active')),
-                            DropdownMenuItem(value: 'inactive', child: Text('Inactive')),
-                            DropdownMenuItem(value: 'suspended', child: Text('Suspended')),
-                          ],
-                          onChanged: (v) => setState(() => statusFilter = v ?? 'all'),
-                          decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 8)),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        width: 180,
-                        child: DropdownButtonFormField<String>(
-                          initialValue: departmentFilter,
-                          items: [
-                            const DropdownMenuItem(value: 'all', child: Text('All Departments')),
-                            ...departments.map((d) => DropdownMenuItem(value: d, child: Text(d))),
-                          ],
-                          onChanged: (v) => setState(() => departmentFilter = v ?? 'all'),
-                          decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 8)),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      IconButton(
-                          onPressed: () => setState(() {
-                                searchQuery = '';
-                                statusFilter = 'all';
-                                departmentFilter = 'all';
-                              }),
-                          icon: const Icon(Icons.refresh)),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Users table (DataTable for desktop-like view, fallback to ListView for small widths)
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: DataTable(
-                      columns: const [
-                        DataColumn(label: Text('User')),
-                        DataColumn(label: Text('Role')),
-                        DataColumn(label: Text('Department')),
-                        DataColumn(label: Text('Status')),
-                        DataColumn(label: Text('Last Login')),
-                        DataColumn(label: Text('Actions')),
                       ],
-                      rows: _filteredUsers.map((u) {
-                        return DataRow(cells: [
-                          DataCell(Row(
-                            children: [
-                              CircleAvatar(child: Text(_initials(u.name), style: const TextStyle(fontSize: 12))),
-                              const SizedBox(width: 8),
-                              Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(u.name),
-                                    Text(u.email, style: const TextStyle(fontSize: 12, color: Colors.grey))
-                                  ]),
-                            ],
-                          )),
-                          DataCell(Text(u.role)),
-                          DataCell(Text(u.department)),
-                          DataCell(_statusBadge(u.status)),
-                          DataCell(Text(u.lastLogin == null ? 'Never' : formatTimestamp(u.lastLogin!))),
-                          DataCell(Row(
-                            children: [
-                              IconButton(onPressed: () => widget.onNavigateToUserDetails(u.id), icon: const Icon(Icons.remove_red_eye)),
-                              IconButton(onPressed: () {}, icon: const Icon(Icons.edit)),
-                              IconButton(onPressed: () {}, icon: const Icon(Icons.delete_outline)),
-                            ],
-                          )),
-                        ]);
-                      }).toList(),
                     ),
-                  ),
-                ],
-              ),
+                  );
+                }
+                if (v == 'logout') {
+                  if (widget.onLogout != null) return widget.onLogout!(context);
+                  Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const SizedBox()));
+                }
+              },
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'profile', child: Text('Profile')),
+                PopupMenuItem(value: 'logout', child: Text('Logout')),
+              ],
+              child: CircleAvatar(radius: 18, child: Text(userName.isNotEmpty ? userName[0] : 'A')),
             ),
           ),
         ],
+        bottom: TabBar(controller: _tabController, tabs: const [Tab(text: 'Users'), Tab(text: 'Activity'), Tab(text: 'Security'), Tab(text: 'System')]),
       ),
+      body: TabBarView(controller: _tabController, children: [_buildUserManagement(), _buildActivityLogs(), _buildSecurity(), _buildSystemSettings()]),
     );
   }
 
-  Widget _buildActivityTab(BuildContext context) {
-    final stats = activityStats;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // Stats
-          Row(
-            children: [
-              _StatsCard(title: 'Total Events', value: stats['total'].toString(), icon: Icons.history, color: Colors.blue),
+  // -------------------- User Management Tab --------------------
+  Widget _buildUserManagement() {
+    return LayoutBuilder(builder: (ctx, constraints) {
+      final isNarrow = constraints.maxWidth < 900;
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // Stat cards
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(children: [
+              const SizedBox(width: 8),
+              SizedBox(width: isNarrow ? 240 : 200, child: _buildStatCard('Total Users', '${_users.length}', Icons.people, Colors.blue)),
               const SizedBox(width: 12),
-              _StatsCard(title: 'High Priority', value: stats['high'].toString(), icon: Icons.warning_amber, color: Colors.red),
+              SizedBox(width: isNarrow ? 240 : 200, child: _buildStatCard('Active', '${_users.where((u) => u.status == 'Active').length}', Icons.check_circle, Colors.green)),
               const SizedBox(width: 12),
-              _StatsCard(title: 'Warnings', value: stats['warning'].toString(), icon: Icons.report_problem, color: Colors.orange),
+              SizedBox(width: isNarrow ? 240 : 200, child: _buildStatCard('Inactive', '${_users.where((u) => u.status == 'Inactive').length}', Icons.pause_circle, Colors.orange)),
               const SizedBox(width: 12),
-              _StatsCard(title: 'Information', value: stats['info'].toString(), icon: Icons.info_outline, color: Colors.blueAccent),
-            ],
+              SizedBox(width: isNarrow ? 240 : 200, child: _buildStatCard('Suspended', '${_users.where((u) => u.status == 'Suspended').length}', Icons.block, Colors.red)),
+              const SizedBox(width: 8),
+            ]),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 20),
 
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                children: [
-                  // Header
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(crossAxisAlignment: CrossAxisAlignment.start, children: const [
-                        Text('Recent Activity', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                        SizedBox(height: 4),
-                        Text('System events and user activities in real-time', style: TextStyle(color: Colors.grey)),
-                      ]),
-                      Row(children: [
-                        TextButton.icon(onPressed: () {}, icon: const Icon(Icons.download_outlined), label: const Text('Export Logs')),
-                        const SizedBox(width: 8),
-                        OutlinedButton.icon(onPressed: () => setState(() {}), icon: const Icon(Icons.refresh), label: const Text('Refresh')),
-                      ]),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Filters
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: 'Search activities...', border: OutlineInputBorder(borderRadius: BorderRadius.circular(8))),
-                          onChanged: (v) => setState(() => activitySearchQuery = v),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        width: 160,
-                        child: DropdownButtonFormField<String>(
-                          initialValue: activityTypeFilter,
-                          items: const [
-                            DropdownMenuItem(value: 'all', child: Text('All Types')),
-                            DropdownMenuItem(value: 'authentication', child: Text('Authentication')),
-                            DropdownMenuItem(value: 'work_order', child: Text('Work Orders')),
-                            DropdownMenuItem(value: 'approval', child: Text('Approvals')),
-                            DropdownMenuItem(value: 'user_management', child: Text('User Management')),
-                            DropdownMenuItem(value: 'system', child: Text('System')),
-                            DropdownMenuItem(value: 'security', child: Text('Security')),
-                            DropdownMenuItem(value: 'compliance', child: Text('Compliance')),
-                          ],
-                          onChanged: (v) => setState(() => activityTypeFilter = v ?? 'all'),
-                          decoration: const InputDecoration(border: OutlineInputBorder()),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      SizedBox(
-                        width: 140,
-                        child: DropdownButtonFormField<String>(
-                          initialValue: activitySeverityFilter,
-                          items: const [
-                            DropdownMenuItem(value: 'all', child: Text('All Levels')),
-                            DropdownMenuItem(value: 'high', child: Text('High')),
-                            DropdownMenuItem(value: 'warning', child: Text('Warning')),
-                            DropdownMenuItem(value: 'info', child: Text('Info')),
-                          ],
-                          onChanged: (v) => setState(() => activitySeverityFilter = v ?? 'all'),
-                          decoration: const InputDecoration(border: OutlineInputBorder()),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // Activity list
-                  Column(
-                    children: _filteredActivityLogs.map((log) {
-                      return ListTile(
-                        contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                        leading: Container(
-                          padding: const EdgeInsets.all(6),
-                          decoration: BoxDecoration(color: severityColor(log.severity).withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-                          child: getActivityIcon(log.type),
-                        ),
-                        title: Text(log.action, style: const TextStyle(fontWeight: FontWeight.w600)),
-                        subtitle: Text(log.details),
-                        trailing: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            severityBadge(log.severity),
-                            const SizedBox(height: 6),
-                            Text(formatTimestamp(log.timestamp), style: const TextStyle(fontSize: 11))
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ],
+          // Toolbar
+          Row(children: [
+            Expanded(
+              child: TextField(
+                controller: _userSearchController,
+                decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: 'Search users...', filled: true, fillColor: Colors.grey[50], border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300))),
+                onChanged: (v) => _filterUsers(),
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSecurityTab(BuildContext context) {
-    final s = _security;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // security cards grid
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              _SettingCard(
-                title: 'Password Policy',
-                icon: Icons.vpn_key,
-                description: 'Configure password requirements and security',
-                child: Column(
-                  children: [
-                    _labelRow('Minimum Length', '${s.passwordPolicy.minLength} characters'),
-                    _switchRow('Require Uppercase', s.passwordPolicy.requireUppercase, (v) {}),
-                    _switchRow('Require Lowercase', s.passwordPolicy.requireLowercase, (v) {}),
-                    _switchRow('Require Numbers', s.passwordPolicy.requireNumbers, (v) {}),
-                    _switchRow('Require Special Characters', s.passwordPolicy.requireSpecialChars, (v) {}),
-                    _labelRow('Password Expiry', '${s.passwordPolicy.passwordExpiry} days'),
-                    _labelRow('Prevent Reuse', 'Last ${s.passwordPolicy.preventReuse} passwords'),
-                    const SizedBox(height: 8),
-                    SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.settings), label: const Text('Update Policy'))),
-                  ],
-                ),
-              ),
-              _SettingCard(
-                title: 'Session Security',
-                icon: Icons.lock_clock,
-                description: 'Manage user session settings and timeouts',
-                child: Column(
-                  children: [
-                    _labelRow('Session Timeout', '${s.sessionSecurity.sessionTimeout} minutes'),
-                    _labelRow('Max Concurrent Sessions', '${s.sessionSecurity.maxConcurrentSessions} sessions'),
-                    _switchRow('Require Re-authentication', s.sessionSecurity.requireReauth, (v) {}),
-                    _switchRow('Logout on Browser Close', s.sessionSecurity.logoutOnClose, (v) {}),
-                    const SizedBox(height: 8),
-                    SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.settings), label: const Text('Update Sessions'))),
-                  ],
-                ),
-              ),
-              _SettingCard(
-                title: 'Access Control',
-                icon: Icons.shield_outlined,
-                description: 'Configure login security and IP restrictions',
-                child: Column(
-                  children: [
-                    _labelRow('Max Failed Attempts', '${s.accessControl.maxFailedAttempts} attempts'),
-                    _labelRow('Lockout Duration', '${s.accessControl.lockoutDuration} minutes'),
-                    _switchRow('Two-Factor Authentication', s.accessControl.enableTwoFactor, (v) {}),
-                    const SizedBox(height: 8),
-                    const Align(alignment: Alignment.centerLeft, child: Text('Allowed IP Ranges', style: TextStyle(fontWeight: FontWeight.w600))),
-                    Column(
-                      children: s.accessControl.allowedIpRanges.map((range) {
-                        return Container(
-                          margin: const EdgeInsets.symmetric(vertical: 4),
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
-                          decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: Colors.grey.shade50),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(range, style: const TextStyle(fontFamily: 'monospace')),
-                              IconButton(onPressed: () {}, icon: const Icon(Icons.delete_outline, size: 18)),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 8),
-                    OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.public), label: const Text('Add IP Range')),
-                  ],
-                ),
-              ),
-              _SettingCard(
-                title: 'Audit & Logging',
-                icon: Icons.storage_outlined,
-                description: 'Configure audit logging and retention settings',
-                child: Column(
-                  children: [
-                    _labelRow('Log Retention', '${s.auditSettings.logRetention} days'),
-                    _switchRow('Real-time Alerts', s.auditSettings.enableRealTimeAlerts, (v) {}),
-                    _labelRow('Alert Threshold', '${s.auditSettings.alertThreshold} events'),
-                    _switchRow('Export Enabled', s.auditSettings.exportEnabled, (v) {}),
-                    const SizedBox(height: 8),
-                    SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.settings), label: const Text('Update Audit Settings'))),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-          // Security status overview
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                children: [
-                  Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Text('Security Status Overview', style: TextStyle(fontWeight: FontWeight.bold)),
-                              SizedBox(height: 4),
-                              Text('Current security health and recent alerts', style: TextStyle(color: Colors.grey)),
-                            ]),
-                        OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.remove_red_eye), label: const Text('View All Security Events')),
-                      ]),
-                  const SizedBox(height: 8),
-                  Wrap(spacing: 8, runSpacing: 8, children: [
-                    _statusPill(Colors.green, Icons.check_circle, 'System Secure', 'All security checks passed'),
-                    _statusPill(Colors.orange, Icons.report_problem, '1 Warning', 'Failed login attempts detected'),
-                    _statusPill(Colors.blue, Icons.bar_chart, 'Security Score', '92/100 - Excellent'),
-                  ]),
-                  const SizedBox(height: 12),
-                  Column(
-                    children: _activityLogs.where((log) => log.type == 'security' || log.severity == 'high').take(3).map((log) {
-                      return Container(
-                        margin: const EdgeInsets.symmetric(vertical: 6),
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade200)),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Row(
-                                children: [
-                                  Container(
-                                      padding: const EdgeInsets.all(6),
-                                      decoration: BoxDecoration(color: severityColor(log.severity).withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-                                      child: getActivityIcon(log.type)),
-                                  const SizedBox(width: 8),
-                                  Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(log.action, style: const TextStyle(fontWeight: FontWeight.w600)),
-                                        Text(log.details, style: const TextStyle(color: Colors.grey))
-                                      ]),
-                                ]),
-                            Text(formatTimestamp(log.timestamp), style: const TextStyle(color: Colors.grey, fontSize: 12)),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  )
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSettingsTab(BuildContext context) {
-    final s = _settings;
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          Wrap(
-            spacing: 12,
-            runSpacing: 12,
-            children: [
-              _SettingCard(
-                title: 'General Configuration',
-                icon: Icons.settings,
-                description: 'Basic system settings and preferences',
-                child: Column(
-                  children: [
-                    _readonlyRow('System Name', s.general.systemName),
-                    _readonlyRow('Timezone', s.general.timezone),
-                    _readonlyRow('Date Format', s.general.dateFormat),
-                    _readonlyRow('Time Format', s.general.timeFormat),
-                    _readonlyRow('Language', s.general.language),
-                    _switchRow('Maintenance Mode', s.general.maintenanceMode, (v) {}),
-                    const SizedBox(height: 8),
-                    SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.settings), label: const Text('Update General Settings'))),
-                  ],
-                ),
-              ),
-              _SettingCard(
-                title: 'Work Order Configuration',
-                icon: Icons.task,
-                description: 'Configure work order processing and workflows',
-                child: Column(
-                  children: [
-                    _switchRow('Auto Assignment', s.workOrders.autoAssignment, (v) {}),
-                    Wrap(spacing: 6, children: s.workOrders.priorityLevels.map((lvl) => Chip(label: Text(lvl))).toList()),
-                    _readonlyRow('Default Priority', s.workOrders.defaultPriority),
-                    _switchRow('Estimation Required', s.workOrders.estimationRequired, (v) {}),
-                    _readonlyRow('Max Active Orders', s.workOrders.maxActiveOrders.toString()),
-                    _switchRow('Approval Workflow', s.workOrders.approvalWorkflow, (v) {}),
-                    const SizedBox(height: 8),
-                    SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.task), label: const Text('Update Work Order Settings'))),
-                  ],
-                ),
-              ),
-              _SettingCard(
-                title: 'Notification Settings',
-                icon: Icons.notifications,
-                description: 'Configure alerts and communication preferences',
-                child: Column(
-                  children: [
-                    _switchRow('Email Notifications', s.notifications.emailEnabled, (v) {}),
-                    _switchRow('SMS Notifications', s.notifications.smsEnabled, (v) {}),
-                    _switchRow('Push Notifications', s.notifications.pushEnabled, (v) {}),
-                    _readonlyRow('Escalation Time', '${s.notifications.escalationTime} minutes'),
-                    _readonlyRow('Reminder Interval', '${s.notifications.reminderInterval} minutes'),
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                      const Text('Quiet Hours'),
-                      Switch(value: s.notifications.quietHours.enabled, onChanged: (_) {}),
-                    ]),
-                    Text('${s.notifications.quietHours.start} - ${s.notifications.quietHours.end}', style: const TextStyle(color: Colors.grey)),
-                    const SizedBox(height: 8),
-                    SizedBox(width: double.infinity, child: ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.notifications), label: const Text('Update Notifications'))),
-                  ],
-                ),
-              ),
-              _SettingCard(
-                title: 'Backup Configuration',
-                icon: Icons.cloud_upload_outlined,
-                description: 'Manage automated backups and data retention',
-                child: Column(
-                  children: [
-                    _switchRow('Auto Backup', s.backup.autoBackup, (v) {}),
-                    _readonlyRow('Frequency', s.backup.frequency),
-                    _readonlyRow('Retention Period', '${s.backup.retentionDays} days'),
-                    _readonlyRow('Storage Location', s.backup.location),
-                    _readonlyRow('Last Backup', s.backup.lastBackup != null ? formatTimestamp(s.backup.lastBackup!) : 'N/A'),
-                    _readonlyRow('Next Backup', s.backup.nextBackup != null ? formatTimestamp(s.backup.nextBackup!) : 'N/A'),
-                    const SizedBox(height: 8),
-                    Row(children: [
-                      Expanded(child: OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.save_alt), label: const Text('Backup Now'))),
-                      const SizedBox(width: 8),
-                      Expanded(child: ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.settings), label: const Text('Configure'))),
-                    ]),
-                  ],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          // Integrations Card
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                children: [
-                  Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: const [
-                    Text('System Integrations', style: TextStyle(fontWeight: FontWeight.bold)),
-                    Text('Manage external system connections and APIs', style: TextStyle(color: Colors.grey)),
-                  ]),
-                  const SizedBox(height: 12),
-                  Column(
-                    children: widget.settings.integrations.entries.map((e) {
-                      final key = e.key;
-                      final info = e.value;
-                      return Container(
-                        margin: const EdgeInsets.symmetric(vertical: 6),
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade200)),
-                        child: Row(
-                          children: [
-                            Container(width: 10, height: 10, decoration: BoxDecoration(color: info.status == 'connected' ? Colors.green : Colors.red, shape: BoxShape.circle)),
-                            const SizedBox(width: 10),
-                            Expanded(
-                                child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(_humanize(key)),
-                                      Text(info.endpoint, style: const TextStyle(color: Colors.grey)),
-                                      if (info.lastSync != null) Text('Last sync: ${formatTimestamp(info.lastSync!)}', style: const TextStyle(color: Colors.grey, fontSize: 12))
-                                    ])),
-                            Badge(text: info.status),
-                            const SizedBox(width: 8),
-                            Switch(value: info.enabled, onChanged: (_) {}),
-                            const SizedBox(width: 8),
-                            IconButton(onPressed: () {}, icon: const Icon(Icons.settings)),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 12),
-                  Align(alignment: Alignment.centerRight, child: ElevatedButton.icon(onPressed: () {}, icon: const Icon(Icons.public), label: const Text('Add Integration'))),
-                ],
-              ),
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          // System information
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                  children: [
-                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: const [
-                      Text('System Information', style: TextStyle(fontWeight: FontWeight.bold)),
-                      Text('Current system status and performance metrics', style: TextStyle(color: Colors.grey))
-                    ]),
-                    const SizedBox(height: 12),
-                    Wrap(spacing: 12, runSpacing: 12, children: [
-                      _infoTile('System Health', Icons.check_circle, 'Operational'),
-                      _infoTile('Active Users', Icons.person, '${mockUsers.where((u) => u.status == 'active').length} online'),
-                      _infoTile('Database Status', Icons.storage, 'Connected'),
-                      _infoTile('Storage Usage', Icons.sd_storage, '2.3 GB / 10 GB'),
-                      _infoTile('Uptime', Icons.schedule, '99.9% (30 days)'),
-                      _infoTile('Version', Icons.info, 'v2.1.0'),
-                    ]),
-                  ]),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Small helpers & sub-widgets
-  String _initials(String name) {
-    final parts = name.split(' ');
-    return parts.map((p) => p.isNotEmpty ? p[0] : '').join().toUpperCase();
-  }
-
-  Widget _statusBadge(String status) {
-    Color bg;
-    Color fg;
-    switch (status) {
-      case 'active':
-        bg = Colors.green.shade50;
-        fg = Colors.green.shade800;
-        break;
-      case 'inactive':
-        bg = Colors.grey.shade100;
-        fg = Colors.grey.shade800;
-        break;
-      case 'suspended':
-        bg = Colors.red.shade50;
-        fg = Colors.red.shade800;
-        break;
-      default:
-        bg = Colors.grey.shade100;
-        fg = Colors.grey.shade800;
-    }
-    return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)),
-        child: Text(status, style: TextStyle(color: fg, fontSize: 12)));
-  }
-
-  Widget _switchRow(String label, bool value, ValueChanged<bool> onChanged) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label), Switch(value: value, onChanged: onChanged)]),
-    );
-  }
-
-  Widget _labelRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label), Text(value, style: const TextStyle(color: Colors.grey))]),
-    );
-  }
-
-  Widget _readonlyRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(label), Text(value, style: const TextStyle(color: Colors.grey))]),
-    );
-  }
-
-  String _humanize(String key) {
-    // Insert spaces before capitals, simple approach
-    return key.replaceAllMapped(RegExp(r'([A-Z])'), (m) => ' ${m.group(0)}').trim();
-  }
-
-  Widget _statusPill(Color bg, IconData icon, String title, String subtitle) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: bg.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
-        Icon(icon, color: bg, size: 28),
-        const SizedBox(width: 12),
-        Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Text(title, style: TextStyle(fontWeight: FontWeight.w600, color: bg)),
-          Text(subtitle, style: TextStyle(color: bg.withValues(alpha: 0.8)))
-        ])
-      ]),
-    );
-  }
-
-  Widget _infoTile(String title, IconData icon, String value) {
-    return Container(
-      width: 220,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), color: Colors.grey.shade50),
-      child: Row(
-          children: [
-            Icon(icon, color: Colors.blue),
-            const SizedBox(width: 8),
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.w600)), const SizedBox(height: 4), Text(value, style: const TextStyle(color: Colors.grey))])
-          ]),
-    );
-  }
-}
-
-class _StatsCard extends StatelessWidget {
-  final String title;
-  final String value;
-  final IconData icon;
-  final Color color;
-
-  const _StatsCard({required this.title, required this.value, required this.icon, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-          child: Row(children: [
-            Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(8)),
-                child: Icon(icon, color: color)),
             const SizedBox(width: 12),
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-              const SizedBox(height: 6),
-              Text(value, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color))
-            ])
+            DropdownButton<String>(value: _userFilterStatus, items: const ['All', 'Active', 'Inactive', 'Suspended'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(), onChanged: (v) { if (v == null) return; setState(() { _userFilterStatus = v; _filterUsers(); }); }),
+            const SizedBox(width: 12),
+            ElevatedButton.icon(onPressed: () => _showUserDialog(), icon: const Icon(Icons.add), label: const Text('Add User')),
+            const SizedBox(width: 8),
+            OutlinedButton.icon(onPressed: _exportUsers, icon: const Icon(Icons.download), label: const Text('Export')),
           ]),
-        ),
-      ),
+          const SizedBox(height: 16),
+
+          // Table (wide) or horizontally-scrollable table (mobile)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: 900),
+              child: DataTable(
+                headingRowColor: MaterialStateProperty.all(Colors.grey[50]),
+                columns: const [
+                  DataColumn(label: Text('User', style: TextStyle(fontWeight: FontWeight.bold))),
+                  DataColumn(label: Text('Role', style: TextStyle(fontWeight: FontWeight.bold))),
+                  DataColumn(label: Text('Department', style: TextStyle(fontWeight: FontWeight.bold))),
+                  DataColumn(label: Text('Status', style: TextStyle(fontWeight: FontWeight.bold))),
+                  DataColumn(label: Text('Last Login', style: TextStyle(fontWeight: FontWeight.bold))),
+                  DataColumn(label: Text('Actions', style: TextStyle(fontWeight: FontWeight.bold))),
+                ],
+                rows: _displayedUsers.map((user) {
+                  return DataRow(cells: [
+                    DataCell(Row(children: [CircleAvatar(radius: 16, backgroundColor: Colors.red.shade50, child: Text(user.name[0], style: const TextStyle(color: Colors.red, fontSize: 12))), const SizedBox(width: 12), Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [Text(user.name, style: const TextStyle(fontWeight: FontWeight.w600)), Text(user.email, style: const TextStyle(fontSize: 11, color: Colors.grey))])])),
+                    DataCell(Text(user.role)),
+                    DataCell(Text(user.department)),
+                    DataCell(_buildStatusBadge(user.status)),
+                    DataCell(Text(user.lastLogin)),
+                    DataCell(Row(children: [IconButton(icon: const Icon(Icons.visibility_outlined, size: 18, color: Colors.grey), onPressed: () => _viewUser(user)), IconButton(icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.blue), onPressed: () => _showUserDialog(editUser: user)), IconButton(icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red), onPressed: () => _confirmDeleteUser(user))])),
+                  ]);
+                }).toList(),
+              ),
+            ),
+          ),
+        ]),
+      );
+    });
+  }
+
+  // -------------------- Activity Logs --------------------
+  Widget _buildActivityLogs() {
+    return LayoutBuilder(builder: (ctx, constraints) {
+      final isNarrow = constraints.maxWidth < 900;
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          // Stats
+          SingleChildScrollView(scrollDirection: Axis.horizontal, child: Row(children: [const SizedBox(width: 8), SizedBox(width: isNarrow ? 240 : 200, child: _buildStatCard('Total Events', '${_logs.length}', Icons.list_alt, Colors.blue)), const SizedBox(width: 12), SizedBox(width: isNarrow ? 240 : 200, child: _buildStatCard('High Priority', '${_logs.where((l) => l.severity == 'High').length}', Icons.warning, Colors.red)), const SizedBox(width: 12), SizedBox(width: isNarrow ? 240 : 200, child: _buildStatCard('Warnings', '${_logs.where((l) => l.severity == 'Warning').length}', Icons.error_outline, Colors.orange)), const SizedBox(width: 12), SizedBox(width: isNarrow ? 240 : 200, child: _buildStatCard('Information', '${_logs.where((l) => l.severity == 'Info').length}', Icons.info_outline, Colors.blueAccent)), const SizedBox(width: 8)])),
+          const SizedBox(height: 20),
+
+          // Toolbar
+          Row(children: [
+            Expanded(child: TextField(controller: _logSearchController, decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: 'Search activities...', filled: true, fillColor: Colors.grey[50], border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300))), onChanged: (v) => _filterLogs())),
+            const SizedBox(width: 12),
+            DropdownButton<String>(value: _logSeverityFilter, items: const ['All', 'Info', 'Warning', 'High'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(), onChanged: (v) { if (v == null) return; setState(() { _logSeverityFilter = v; _filterLogs(); }); }),
+            const SizedBox(width: 12),
+            OutlinedButton.icon(onPressed: _exportLogs, icon: const Icon(Icons.download), label: const Text('Export Logs')),
+            const SizedBox(width: 8),
+            OutlinedButton.icon(onPressed: () => setState(() {}), icon: const Icon(Icons.refresh), label: const Text('Refresh')),
+          ]),
+          const SizedBox(height: 20),
+
+          // Table or Card list
+          if (!isNarrow)
+            SingleChildScrollView(scrollDirection: Axis.horizontal, child: ConstrainedBox(constraints: const BoxConstraints(minWidth: 900), child: DataTable(headingRowColor: MaterialStateProperty.all(Colors.grey[50]), columns: const [DataColumn(label: Text('Activity', style: TextStyle(fontWeight: FontWeight.bold))), DataColumn(label: Text('User', style: TextStyle(fontWeight: FontWeight.bold))), DataColumn(label: Text('Details', style: TextStyle(fontWeight: FontWeight.bold))), DataColumn(label: Text('Severity', style: TextStyle(fontWeight: FontWeight.bold))), DataColumn(label: Text('Time Stamp', style: TextStyle(fontWeight: FontWeight.bold)))], rows: _displayedLogs.map((log) {
+              return DataRow(cells: [
+                DataCell(Row(children: [Icon(log.icon, size: 18, color: Colors.grey[700]), const SizedBox(width: 8), Text(log.action, style: const TextStyle(fontWeight: FontWeight.w600))])),
+                DataCell(Row(children: [CircleAvatar(radius: 12, backgroundColor: Colors.grey[200], child: Text(log.user[0], style: const TextStyle(fontSize: 10, color: Colors.black87))), const SizedBox(width: 8), Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisAlignment: MainAxisAlignment.center, children: [Text(log.user, style: const TextStyle(fontWeight: FontWeight.w500))])])),
+                DataCell(SizedBox(width: 300, child: Text(log.details, overflow: TextOverflow.ellipsis))),
+                DataCell(_buildSeverityBadge(log.severity)),
+                DataCell(Text(log.time)),
+              ]);
+            }).toList())) )
+          else
+            Column(children: _displayedLogs.map((log) => Card(margin: const EdgeInsets.symmetric(vertical: 8), child: ListTile(leading: Icon(log.icon, color: Colors.grey[700]), title: Text(log.action), subtitle: Text(log.details), trailing: Column(mainAxisAlignment: MainAxisAlignment.center, children: [ _buildSeverityBadge(log.severity), const SizedBox(height: 6), Text(log.time, style: const TextStyle(fontSize: 11, color: Colors.grey)) ],),), ), ).toList()),
+        ]),
+      );
+    });
+  }
+
+  // -------------------- Security --------------------
+  Widget _buildSecurity() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: LayoutBuilder(builder: (ctx, constraints) {
+        final isNarrow = constraints.maxWidth < 900;
+        if (isNarrow) {
+          return Column(children: [
+            _buildSettingsSection('Password Policy', Icons.vpn_key, [
+              _buildSwitchRow('Require Uppercase', _requireUppercase, (v) => setState(() => _requireUppercase = v)),
+              _buildSwitchRow('Require Lowercase', _requireLowercase, (v) => setState(() => _requireLowercase = v)),
+              _buildSwitchRow('Require Numbers', _requireNumbers, (v) => setState(() => _requireNumbers = v)),
+              _buildSwitchRow('Require Special Characters', _requireSpecial, (v) => setState(() => _requireSpecial = v)),
+              _buildInputRow('Minimum Length', '$_minPasswordLength', onChanged: (v) => setState(() => _minPasswordLength = int.tryParse(v) ?? _minPasswordLength)),
+              _buildInputRow('Password Expiry (days)', '$_passwordExpiryDays', onChanged: (v) => setState(() => _passwordExpiryDays = int.tryParse(v) ?? _passwordExpiryDays)),
+              _buildButtonRow('Update Policy', () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password policy saved')))),
+            ]),
+            const SizedBox(height: 16),
+            _buildSettingsSection('Session Security', Icons.timer, [
+              _buildInputRow('Session Timeout', _sessionTimeout, onChanged: (v) => setState(() => _sessionTimeout = v)),
+              _buildInputRow('Max Concurrent Sessions', _maxConcurrentSessions, onChanged: (v) => setState(() => _maxConcurrentSessions = v)),
+              _buildSwitchRow('Require Re-authentication', _requireReauth, (v) => setState(() => _requireReauth = v)),
+              _buildSwitchRow('Logout on Browser Close', _logoutOnClose, (v) => setState(() => _logoutOnClose = v)),
+              _buildButtonRow('Update Session', () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Session settings saved')))),
+            ]),
+            const SizedBox(height: 16),
+            _buildSettingsSection('Access Control', Icons.shield, [
+              _buildInputRow('Max Failed Attempts', '$_maxFailedAttempts', onChanged: (v) => setState(() => _maxFailedAttempts = int.tryParse(v) ?? _maxFailedAttempts)),
+              _buildInputRow('Lockout Duration', _lockoutDuration, onChanged: (v) => setState(() => _lockoutDuration = v)),
+              _buildSwitchRow('Two-Factor Authentication', _twoFactor, (v) => setState(() => _twoFactor = v)),
+              const Divider(),
+              const Padding(padding: EdgeInsets.symmetric(vertical: 8.0), child: Text('Allowed IP Ranges', style: TextStyle(fontWeight: FontWeight.bold))),
+              const ListTile(dense: true, title: Text('192.168.1.0/24'), trailing: Icon(Icons.delete, size: 16)),
+              const ListTile(dense: true, title: Text('10.0.0.0/16'), trailing: Icon(Icons.delete, size: 16)),
+              OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.add, size: 16), label: const Text('Add Range')),
+            ]),
+            const SizedBox(height: 16),
+            Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade300)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Security Status Overview', style: TextStyle(fontWeight: FontWeight.bold)), const SizedBox(height: 12), _buildSecurityStatusItem('System Secure', 'All security checks passed', Colors.green, Icons.check_circle), const SizedBox(height: 12), _buildSecurityStatusItem('1 Warning', 'Failed login attempts detected', Colors.orange, Icons.warning), const SizedBox(height: 12), _buildSecurityStatusItem('Security Score', '92/100 - Excellent', Colors.blue, Icons.shield),])),
+          ]);
+        }
+
+        // Wide layout: two columns
+        return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(flex: 2, child: Column(children: [
+            _buildSettingsSection('Password Policy', Icons.vpn_key, [
+              _buildSwitchRow('Require Uppercase', _requireUppercase, (v) => setState(() => _requireUppercase = v)),
+              _buildSwitchRow('Require Lowercase', _requireLowercase, (v) => setState(() => _requireLowercase = v)),
+              _buildSwitchRow('Require Numbers', _requireNumbers, (v) => setState(() => _requireNumbers = v)),
+              _buildSwitchRow('Require Special Characters', _requireSpecial, (v) => setState(() => _requireSpecial = v)),
+              _buildInputRow('Minimum Length', '$_minPasswordLength', onChanged: (v) => setState(() => _minPasswordLength = int.tryParse(v) ?? _minPasswordLength)),
+              _buildInputRow('Password Expiry (days)', '$_passwordExpiryDays', onChanged: (v) => setState(() => _passwordExpiryDays = int.tryParse(v) ?? _passwordExpiryDays)),
+              _buildButtonRow('Update Policy', () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Password policy saved')))),
+            ]),
+            const SizedBox(height: 20),
+            _buildSettingsSection('Session Security', Icons.timer, [
+              _buildInputRow('Session Timeout', _sessionTimeout, onChanged: (v) => setState(() => _sessionTimeout = v)),
+              _buildInputRow('Max Concurrent Sessions', _maxConcurrentSessions, onChanged: (v) => setState(() => _maxConcurrentSessions = v)),
+              _buildSwitchRow('Require Re-authentication', _requireReauth, (v) => setState(() => _requireReauth = v)),
+              _buildSwitchRow('Logout on Browser Close', _logoutOnClose, (v) => setState(() => _logoutOnClose = v)),
+              _buildButtonRow('Update Session', () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Session settings saved')))),
+            ]),
+            const SizedBox(height: 20),
+            _buildSettingsSection('Access Control', Icons.shield, [
+              _buildInputRow('Max Failed Attempts', '$_maxFailedAttempts', onChanged: (v) => setState(() => _maxFailedAttempts = int.tryParse(v) ?? _maxFailedAttempts)),
+              _buildInputRow('Lockout Duration', _lockoutDuration, onChanged: (v) => setState(() => _lockoutDuration = v)),
+              _buildSwitchRow('Two-Factor Authentication', _twoFactor, (v) => setState(() => _twoFactor = v)),
+              const Divider(),
+              const Padding(padding: EdgeInsets.symmetric(vertical: 8.0), child: Text('Allowed IP Ranges', style: TextStyle(fontWeight: FontWeight.bold))),
+              const ListTile(dense: true, title: Text('192.168.1.0/24'), trailing: Icon(Icons.delete, size: 16)),
+              const ListTile(dense: true, title: Text('10.0.0.0/16'), trailing: Icon(Icons.delete, size: 16)),
+              OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.add, size: 16), label: const Text('Add Range')),
+            ]),
+          ])),
+          const SizedBox(width: 24),
+          Expanded(flex: 1, child: Column(children: [
+            Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade300)), child: Column(children: [const Text('Security Status Overview', style: TextStyle(fontWeight: FontWeight.bold)), const SizedBox(height: 16), _buildSecurityStatusItem('System Secure', 'All security checks passed', Colors.green, Icons.check_circle), const SizedBox(height: 12), _buildSecurityStatusItem('1 Warning', 'Failed login attempts detected', Colors.orange, Icons.warning), const SizedBox(height: 12), _buildSecurityStatusItem('Security Score', '92/100 - Excellent', Colors.blue, Icons.shield)])),
+            const SizedBox(height: 20),
+            Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade300)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Recent Security Events', style: TextStyle(fontWeight: FontWeight.bold)), const SizedBox(height: 12), ListTile(contentPadding: EdgeInsets.zero, leading: Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: Colors.red[50], borderRadius: BorderRadius.circular(8)), child: const Icon(Icons.warning_amber, color: Colors.red, size: 20)), title: const Text('Security Alert', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)), subtitle: const Text('Multiple failed logins from IP 198.51.100.42', style: TextStyle(fontSize: 11)), trailing: const Text('10m ago', style: TextStyle(fontSize: 11, color: Colors.grey))), Center(child: TextButton(onPressed: () {}, child: const Text('View All Security Events')))])),
+          ]))
+        ]);
+      }),
     );
   }
-}
 
-class _SettingCard extends StatelessWidget {
-  final String title;
-  final String description;
-  final IconData icon;
-  final Widget child;
+  // -------------------- System Settings --------------------
+  Widget _buildSystemSettings() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: LayoutBuilder(builder: (ctx, constraints) {
+        final isNarrow = constraints.maxWidth < 900;
+        if (isNarrow) {
+          return Column(children: [
+            _buildSettingsSection('General Settings', Icons.settings, [
+              _buildInputRow('Company Name', _companyName, onChanged: (v) => setState(() => _companyName = v)),
+              _buildInputRow('Default Timezone', _defaultTimezone, onChanged: (v) => setState(() => _defaultTimezone = v)),
+              _buildSwitchRow('Enable Maintenance Mode', _maintenanceMode, (v) => setState(() => _maintenanceMode = v)),
+              _buildButtonRow('Save General', () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('General settings saved')))),
+            ]),
+            const SizedBox(height: 16),
+            _buildSettingsSection('Work Order Settings', Icons.build_circle, [
+              _buildSwitchRow('Enable Auto-Assign', _autoAssign, (v) => setState(() => _autoAssign = v)),
+              _buildInputRow('Default Priority', _defaultPriority, onChanged: (v) => setState(() => _defaultPriority = v)),
+              _buildButtonRow('Save Work Order', () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Work order settings saved')))),
+            ]),
+            const SizedBox(height: 16),
+            _buildSettingsSection('Notifications', Icons.notifications, [
+              _buildSwitchRow('Email Notifications', _emailNotifications, (v) => setState(() => _emailNotifications = v)),
+              _buildSwitchRow('SMS Notifications', _smsNotifications, (v) => setState(() => _smsNotifications = v)),
+              _buildSwitchRow('Push Notifications', _pushNotifications, (v) => setState(() => _pushNotifications = v)),
+              _buildButtonRow('Save Notifications', () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Notification settings saved')))),
+            ]),
+            const SizedBox(height: 16),
+            Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade300)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('System Info', style: TextStyle(fontWeight: FontWeight.bold)), const SizedBox(height: 12), _buildInfoRow('Version', '1.0.3'), _buildInfoRow('Uptime', '3 days 4 hours'), _buildInfoRow('DB Status', 'Connected'), _buildInfoRow('Storage', '120GB / 256GB')])),
+            const SizedBox(height: 16),
+            Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade300)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Backups', style: TextStyle(fontWeight: FontWeight.bold)), const SizedBox(height: 12), _buildInfoRow('Last Backup', '2 hours ago'), _buildInfoRow('Next Backup', 'in 22 hours'), const SizedBox(height: 12), Row(children: [ElevatedButton(onPressed: () {}, child: const Text('Run Backup Now')), const SizedBox(width: 8), OutlinedButton(onPressed: () {}, child: const Text('Restore'))])])),
+          ]);
+        }
 
-  const _SettingCard({required this.title, required this.description, required this.icon, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: 520,
-      child: Card(
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [Icon(icon), const SizedBox(width: 8), Text(title, style: const TextStyle(fontWeight: FontWeight.bold))]),
-            const SizedBox(height: 4),
-            Text(description, style: const TextStyle(color: Colors.grey)),
-            const SizedBox(height: 8),
-            child,
-          ]),
-        ),
-      ),
+        return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(flex: 2, child: Column(children: [
+            _buildSettingsSection('General Settings', Icons.settings, [
+              _buildInputRow('Company Name', _companyName, onChanged: (v) => setState(() => _companyName = v)),
+              _buildInputRow('Default Timezone', _defaultTimezone, onChanged: (v) => setState(() => _defaultTimezone = v)),
+              _buildSwitchRow('Enable Maintenance Mode', _maintenanceMode, (v) => setState(() => _maintenanceMode = v)),
+              _buildButtonRow('Save General', () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('General settings saved')))),
+            ]),
+            const SizedBox(height: 20),
+            _buildSettingsSection('Work Order Settings', Icons.build_circle, [
+              _buildSwitchRow('Enable Auto-Assign', _autoAssign, (v) => setState(() => _autoAssign = v)),
+              _buildInputRow('Default Priority', _defaultPriority, onChanged: (v) => setState(() => _defaultPriority = v)),
+              _buildButtonRow('Save Work Order', () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Work order settings saved')))),
+            ]),
+            const SizedBox(height: 20),
+            _buildSettingsSection('Notifications', Icons.notifications, [
+              _buildSwitchRow('Email Notifications', _emailNotifications, (v) => setState(() => _emailNotifications = v)),
+              _buildSwitchRow('SMS Notifications', _smsNotifications, (v) => setState(() => _smsNotifications = v)),
+              _buildSwitchRow('Push Notifications', _pushNotifications, (v) => setState(() => _pushNotifications = v)),
+              _buildButtonRow('Save Notifications', () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Notification settings saved')))),
+            ]),
+          ])),
+          const SizedBox(width: 24),
+          Expanded(flex: 1, child: Column(children: [
+            Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade300)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('System Info', style: TextStyle(fontWeight: FontWeight.bold)), const SizedBox(height: 12), _buildInfoRow('Version', '1.0.3'), _buildInfoRow('Uptime', '3 days 4 hours'), _buildInfoRow('DB Status', 'Connected'), _buildInfoRow('Storage', '120GB / 256GB')])),
+            const SizedBox(height: 20),
+            Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade300)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Backups', style: TextStyle(fontWeight: FontWeight.bold)), const SizedBox(height: 12), _buildInfoRow('Last Backup', '2 hours ago'), _buildInfoRow('Next Backup', 'in 22 hours'), const SizedBox(height: 12), Row(children: [ElevatedButton(onPressed: () {}, child: const Text('Run Backup Now')), const SizedBox(width: 8), OutlinedButton(onPressed: () {}, child: const Text('Restore'))])])),
+          ])),
+        ]);
+      }),
     );
   }
-}
 
-class Badge extends StatelessWidget {
-  final String text;
-  final Color? color;
-
-  const Badge({super.key, required this.text, this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    final bg = color ?? Colors.grey.shade200;
+  // -------------------- Small UI helpers --------------------
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(8)),
-      child: Text(text, style: const TextStyle(fontSize: 12)),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)),
+      // ignore: deprecated_member_use
+      child: Row(children: [Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(8)), child: Icon(icon, color: color)), const SizedBox(width: 12), Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontSize: 12, color: Colors.grey)), Text(value, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))])]),
     );
   }
+
+  Widget _buildStatusBadge(String status) {
+    Color bg;
+    if (status == 'Active') {
+      bg = Colors.green.shade50;
+    } else if (status == 'Suspended') bg = Colors.red.shade50;
+    else bg = Colors.orange.shade50;
+    return Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(12)), child: Text(status, style: const TextStyle(fontSize: 12)));
+  }
+
+  Widget _buildSeverityBadge(String severity) {
+    Color c;
+    if (severity == 'High') c = Colors.red;
+    else if (severity == 'Warning') c = Colors.orange;
+    else c = Colors.blue;
+    return Container(padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), decoration: BoxDecoration(color: c.withOpacity(0.12), borderRadius: BorderRadius.circular(8)), child: Text(severity, style: TextStyle(color: c, fontSize: 12)));
+  }
+
+  Widget _buildSettingsSection(String title, IconData icon, List<Widget> children) {
+    return Container(padding: const EdgeInsets.all(16), margin: const EdgeInsets.only(bottom: 12), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade200)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Row(children: [Icon(icon, color: Colors.grey[700]), const SizedBox(width: 8), Text(title, style: const TextStyle(fontWeight: FontWeight.bold))]), const SizedBox(height: 12), ...children]));
+  }
+
+  Widget _buildSwitchRow(String label, bool value, ValueChanged<bool> onChanged) => SwitchListTile(value: value, onChanged: onChanged, title: Text(label));
+
+  Widget _buildInputRow(String label, String initial, {ValueChanged<String>? onChanged}) => Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: TextField(decoration: InputDecoration(labelText: label, filled: true, fillColor: Colors.grey[50], border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade200))), controller: TextEditingController(text: initial), onChanged: onChanged));
+
+  Widget _buildButtonRow(String label, VoidCallback onPressed) => Padding(padding: const EdgeInsets.only(top: 8), child: Row(children: [ElevatedButton(onPressed: onPressed, child: Text(label))]));
+
+  Widget _buildInfoRow(String key, String value) => Padding(padding: const EdgeInsets.symmetric(vertical: 6), child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(key), Text(value, style: const TextStyle(fontWeight: FontWeight.bold))]));
+
+  Widget _buildSecurityStatusItem(String title, String subtitle, Color color, IconData icon) => Row(children: [Container(padding: const EdgeInsets.all(8), decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(8)), child: Icon(icon, color: color)), const SizedBox(width: 12), Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.bold)), const SizedBox(height: 4), Text(subtitle, style: const TextStyle(color: Colors.grey))])]);
 }
+
