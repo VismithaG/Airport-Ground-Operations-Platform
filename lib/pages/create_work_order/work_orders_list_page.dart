@@ -150,7 +150,7 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
             // Table Layout Wrapper for Horizontal Scrolling
             LayoutBuilder(
               builder: (context, constraints) {
-                const double minTableWidth = 1000.0;
+                const double minTableWidth = 1200.0;
                 final double tableWidth = constraints.maxWidth > minTableWidth 
                     ? constraints.maxWidth 
                     : minTableWidth;
@@ -191,8 +191,11 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
   // --- Widget Builders ---
 
   Widget _buildHeader() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    return Wrap(
+      alignment: WrapAlignment.spaceBetween,
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 16,
+      runSpacing: 16,
       children: [
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,11 +249,14 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
             ],
           ),
           const SizedBox(height: 12),
-          Row(
+          Wrap(
+            spacing: 16,
+            runSpacing: 16,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               // Search Input
-              Expanded(
-                flex: 2,
+              SizedBox(
+                width: 200,
                 child: TextField(
                   onChanged: (val) => setState(() => _searchQuery = val),
                   decoration: InputDecoration(
@@ -266,23 +272,26 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
                   ),
                 ),
               ),
-              const SizedBox(width: 16),
               
               // Status Dropdown
-              Expanded(child: _buildDropdown(
-                value: _selectedStatus,
-                items: ['All Statuses', 'Open', 'In Progress', 'Completed', 'On Hold'],
-                onChanged: (val) => setState(() => _selectedStatus = val!),
-              )),
-              
-              const SizedBox(width: 16),
+              SizedBox(
+                width: 150,
+                child: _buildDropdown(
+                  value: _selectedStatus,
+                  items: ['All Statuses', 'Open', 'In Progress', 'Completed', 'On Hold'],
+                  onChanged: (val) => setState(() => _selectedStatus = val!),
+                ),
+              ),
               
               // Priority Dropdown
-              Expanded(child: _buildDropdown(
-                value: _selectedPriority,
-                items: ['All Priorities', 'Critical', 'High', 'Medium', 'Low'],
-                onChanged: (val) => setState(() => _selectedPriority = val!),
-              )),
+              SizedBox(
+                width: 150,
+                child: _buildDropdown(
+                  value: _selectedPriority,
+                  items: ['All Priorities', 'Critical', 'High', 'Medium', 'Low'],
+                  onChanged: (val) => setState(() => _selectedPriority = val!),
+                ),
+              ),
             ],
           ),
         ],
@@ -392,7 +401,13 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
               children: [
                 const Icon(Icons.location_on_outlined, size: 14, color: Colors.grey),
                 const SizedBox(width: 4),
-                Text(wo.location, style: const TextStyle(fontSize: 13)),
+                Expanded(
+                  child: Text(
+                    wo.location,
+                    style: const TextStyle(fontSize: 13),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
               ],
             ),
           ),
@@ -404,19 +419,22 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
               children: [
                 const Icon(Icons.calendar_today_outlined, size: 14, color: Colors.grey),
                 const SizedBox(width: 4),
-                Text(
-                  wo.dueDate != null 
-                    ? "${wo.dueDate!.day} - ${_getMonth(wo.dueDate!.month)} - ${wo.dueDate!.year}" 
-                    : "N/A",
-                  style: const TextStyle(fontSize: 13),
+                Expanded(
+                  child: Text(
+                    wo.dueDate != null 
+                      ? "${wo.dueDate!.day} - ${_getMonth(wo.dueDate!.month)} - ${wo.dueDate!.year}" 
+                      : "N/A",
+                    style: const TextStyle(fontSize: 13),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
               ],
             ),
           ),
           
           // Actions
-          Flexible(
-            fit: FlexFit.loose,
+          SizedBox(
+            width: 60,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [

@@ -378,15 +378,20 @@ class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStat
           const SizedBox(height: 20),
 
           // Toolbar
-          Row(children: [
-            Expanded(child: TextField(controller: _logSearchController, decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: 'Search activities...', filled: true, fillColor: Colors.grey[50], border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300))), onChanged: (v) => _filterLogs())),
-            const SizedBox(width: 12),
-            DropdownButton<String>(value: _logSeverityFilter, items: const ['All', 'Info', 'Warning', 'High'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(), onChanged: (v) { if (v == null) return; setState(() { _logSeverityFilter = v; _filterLogs(); }); }),
-            const SizedBox(width: 12),
-            OutlinedButton.icon(onPressed: _exportLogs, icon: const Icon(Icons.download), label: const Text('Export Logs')),
-            const SizedBox(width: 8),
-            OutlinedButton.icon(onPressed: () => setState(() {}), icon: const Icon(Icons.refresh), label: const Text('Refresh')),
-          ]),
+          Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              SizedBox(
+                width: isNarrow ? double.infinity : 300,
+                child: TextField(controller: _logSearchController, decoration: InputDecoration(prefixIcon: const Icon(Icons.search), hintText: 'Search activities...', filled: true, fillColor: Colors.grey[50], border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300))), onChanged: (v) => _filterLogs()),
+              ),
+              DropdownButton<String>(value: _logSeverityFilter, items: const ['All', 'Info', 'Warning', 'High'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(), onChanged: (v) { if (v == null) return; setState(() { _logSeverityFilter = v; _filterLogs(); }); }),
+              OutlinedButton.icon(onPressed: _exportLogs, icon: const Icon(Icons.download), label: const Text('Export Logs')),
+              OutlinedButton.icon(onPressed: () => setState(() {}), icon: const Icon(Icons.refresh), label: const Text('Refresh')),
+            ],
+          ),
           const SizedBox(height: 20),
 
           // Table or Card list

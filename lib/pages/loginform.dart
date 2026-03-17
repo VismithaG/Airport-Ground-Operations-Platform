@@ -130,9 +130,11 @@ class _LoginFormState extends State<LoginForm> {
                       setState(() => _rememberMe = value ?? false);
                     },
                   ),
-                  const Text(
-                    "Remember me for 30 days",
-                    style: TextStyle(color: Colors.grey),
+                  const Expanded(
+                    child: Text(
+                      "Remember me for 30 days",
+                      style: TextStyle(color: Colors.grey),
+                    ),
                   ),
                 ],
               ),
