@@ -147,18 +147,39 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
             ),
             const SizedBox(height: 10),
 
-            // Table Header
-            _buildTableHeader(),
-            const Divider(),
+            // Table Layout Wrapper for Horizontal Scrolling
+            LayoutBuilder(
+              builder: (context, constraints) {
+                const double minTableWidth = 1000.0;
+                final double tableWidth = constraints.maxWidth > minTableWidth 
+                    ? constraints.maxWidth 
+                    : minTableWidth;
+                    
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: SizedBox(
+                    width: tableWidth,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Table Header
+                        _buildTableHeader(),
+                        const Divider(),
 
-            // Data List
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _filteredOrders.length,
-              separatorBuilder: (context, index) => const Divider(height: 1),
-              itemBuilder: (context, index) {
-                return _buildWorkOrderRow(_filteredOrders[index]);
+                        // Data List
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _filteredOrders.length,
+                          separatorBuilder: (context, index) => const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            return _buildWorkOrderRow(_filteredOrders[index]);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                );
               },
             ),
           ],
