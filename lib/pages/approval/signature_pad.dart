@@ -28,11 +28,13 @@ class SignaturePadState extends State<SignaturePad> {
       width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border.all(color: Colors.grey.shade300),
+        border: Border.all(color: Colors.grey.shade400, width: 1.5),
         borderRadius: BorderRadius.circular(8),
       ),
-      child: Stack(
-        children: [
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Stack(
+          children: [
           // The Drawing Area
           GestureDetector(
             onPanUpdate: (details) {
@@ -62,19 +64,23 @@ class SignaturePadState extends State<SignaturePad> {
 
           // Clear Button
           Positioned(
-            bottom: 8,
-            right: 8,
-            child: OutlinedButton.icon(
+            bottom: 12,
+            right: 12,
+            child: ElevatedButton.icon(
               onPressed: clear,
               icon: const Icon(Icons.clear, size: 14),
-              label: const Text("Clear", style: TextStyle(fontSize: 12)),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.grey,
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              label: const Text("Clear", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.red.shade700,
+                backgroundColor: Colors.white,
+                elevation: 4,
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               ),
             ),
           )
-        ],
+          ],
+        ),
       ),
     );
   }
