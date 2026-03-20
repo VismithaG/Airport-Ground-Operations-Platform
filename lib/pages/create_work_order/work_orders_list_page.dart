@@ -197,23 +197,26 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
       spacing: 16,
       runSpacing: 16,
       children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: const [
-            Text(
-              "Work Orders",
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFFB71C1C), // SriLankan Red
+        ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width - 48),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Text(
+                "Work Orders",
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFB71C1C), // SriLankan Red
+                ),
               ),
-            ),
-            SizedBox(height: 4),
-            Text(
-              "Manage and track service department work orders",
-              style: TextStyle(color: Colors.grey, fontSize: 14),
-            ),
-          ],
+              SizedBox(height: 4),
+              Text(
+                "Manage and track service department work orders",
+                style: TextStyle(color: Colors.grey, fontSize: 14),
+              ),
+            ],
+          ),
         ),
         ElevatedButton.icon(
           onPressed: _navigateToCreate,
@@ -323,14 +326,14 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         children: const [
-          SizedBox(width: 80, child: Text("Work Order ID", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+          SizedBox(width: 100, child: Text("Work Order ID", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
           Expanded(flex: 2, child: Text("Title & Flight Number", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
           Expanded(flex: 1, child: Text("Priority", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
           Expanded(flex: 1, child: Text("Status", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
           Expanded(flex: 2, child: Text("Services", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
           Expanded(flex: 1, child: Text("Location", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
           Expanded(flex: 1, child: Text("Due Date", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-          SizedBox(width: 60, child: Text("Action", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+          SizedBox(width: 80, child: Text("Action", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
         ],
       ),
     );
@@ -343,7 +346,7 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ID
-          SizedBox(width: 80, child: Text(wo.id, style: const TextStyle(fontWeight: FontWeight.w500))),
+          SizedBox(width: 100, child: Text(wo.id, style: const TextStyle(fontWeight: FontWeight.w500))),
           
           // Title
           Expanded(
@@ -434,7 +437,7 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
           
           // Actions
           SizedBox(
-            width: 60,
+            width: 80,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
