@@ -3,6 +3,7 @@ import 'dart:math';
 import 'section_flight_info.dart';
 import 'section_services.dart';
 import 'section_review.dart'; // We will create this file below
+import '../dashboard.dart';
 
 // --- Work Order Model ---
 class WorkOrder {
@@ -28,8 +29,9 @@ class WorkOrder {
 class CreateWorkOrderPage extends StatefulWidget {
   final VoidCallback onBack;
   final ValueChanged<WorkOrder> onSave;
+  final UserInfo? currentUser;
 
-  const CreateWorkOrderPage({super.key, required this.onBack, required this.onSave});
+  const CreateWorkOrderPage({super.key, required this.onBack, required this.onSave, this.currentUser});
 
   @override
   State<CreateWorkOrderPage> createState() => _CreateWorkOrderPageState();
@@ -65,6 +67,15 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
   final TextEditingController _specialInstructionsCtl = TextEditingController();
 
   final String _workOrderId = "ASD-${Random().nextInt(99999).toString().padLeft(5, '0')}";
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.currentUser != null) {
+      _requestedByCtl.text = widget.currentUser!.name;
+      _contactCtl.text = widget.currentUser!.email;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -206,6 +217,7 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
     switch (_currentStep) {
       case 1:
         return SectionFlightInfo(
+          isReadOnlyMode: widget.currentUser != null,
           carrierCtl: _carrierCtl,
           flightNoCtl: _flightNoCtl,
           timeCtl: _timeCtl,
