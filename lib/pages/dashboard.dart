@@ -88,7 +88,7 @@ class _DashboardPageState extends State<DashboardPage> {
           Expanded(
             child: _selectedIndex == 0 
               ? _buildOverview() 
-              : const WorkOrdersListPage(),
+              : WorkOrdersListPage(currentUser: widget.currentUser),
           ),
         ],
       ),
@@ -170,7 +170,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       (widget.currentUser!.role == 'Supervisor' || widget.currentUser!.role == 'Administrator'))
                     ElevatedButton.icon(
                       onPressed: () {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => ApprovalListPage(currentUserRole: widget.currentUser?.role)));
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => ApprovalListPage(currentUser: widget.currentUser)));
                       }, 
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF7F1D1D), // Slightly darker red for distinction

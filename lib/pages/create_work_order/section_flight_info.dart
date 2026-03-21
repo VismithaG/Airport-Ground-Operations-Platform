@@ -17,6 +17,7 @@ class SectionFlightInfo extends StatelessWidget {
   final ValueChanged<String?> onDepartmentChanged;
   final String priority;
   final ValueChanged<String?> onPriorityChanged;
+  final bool isReadOnlyMode;
 
   const SectionFlightInfo({
     super.key,
@@ -34,6 +35,7 @@ class SectionFlightInfo extends StatelessWidget {
     required this.onDepartmentChanged,
     required this.priority,
     required this.onPriorityChanged,
+    this.isReadOnlyMode = false,
   });
 
   @override
@@ -93,22 +95,22 @@ class SectionFlightInfo extends StatelessWidget {
           icon: Icons.person_outline,
           child: Column(
             children: [
-              _buildTextField(requestedByCtl, "Requested By *", "Your full name"),
+              _buildTextField(requestedByCtl, "Requested By *", "Your full name", readOnly: isReadOnlyMode),
               const SizedBox(height: 12),
-              _buildTextField(contactCtl, "Contact Number *", "Extension or Mobile"),
+              _buildTextField(contactCtl, "Contact Number *", "Extension or Mobile", readOnly: isReadOnlyMode),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: department,
-                decoration: _inputDecoration("Department"),
+                decoration: _inputDecoration("Department").copyWith(filled: isReadOnlyMode, fillColor: isReadOnlyMode ? Colors.grey.shade100 : null),
                 items: ["Ground Operations", "Maintenance", "Cargo"].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-                onChanged: onDepartmentChanged,
+                onChanged: isReadOnlyMode ? null : onDepartmentChanged,
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: priority,
-                decoration: _inputDecoration("Priority Level"),
+                decoration: _inputDecoration("Priority Level").copyWith(filled: isReadOnlyMode, fillColor: isReadOnlyMode ? Colors.grey.shade100 : null),
                 items: ["Low", "Medium", "High", "Critical"].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-                onChanged: onPriorityChanged,
+                onChanged: isReadOnlyMode ? null : onPriorityChanged,
               ),
             ],
           ),
@@ -141,10 +143,15 @@ class SectionFlightInfo extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField(TextEditingController ctl, String label, String hint) {
+  Widget _buildTextField(TextEditingController ctl, String label, String hint, {bool readOnly = false}) {
     return TextField(
       controller: ctl,
-      decoration: _inputDecoration(label).copyWith(hintText: hint),
+      readOnly: readOnly,
+      decoration: _inputDecoration(label).copyWith(
+        hintText: hint,
+        filled: readOnly,
+        fillColor: readOnly ? Colors.grey.shade100 : null,
+      ),
     );
   }
 

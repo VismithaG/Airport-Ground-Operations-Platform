@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+import '../dashboard.dart';
 import 'signature_pad.dart';
 import 'approval_success_page.dart';
 
 class WorkOrderApprovalPage extends StatefulWidget {
   final String workOrderId;
-  final String? currentUserRole;
+  final UserInfo? currentUser;
 
-  const WorkOrderApprovalPage({super.key, required this.workOrderId, this.currentUserRole});
+  const WorkOrderApprovalPage({super.key, required this.workOrderId, this.currentUser});
 
   @override
   State<WorkOrderApprovalPage> createState() => _WorkOrderApprovalPageState();
@@ -17,11 +18,23 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
   
   // Form State
   String _decision = 'Approve'; // Approve or Reject
-  final _nameCtl = TextEditingController(text: "Krishanka Jayasundhara"); // Pre-filled for demo
-  final _titleCtl = TextEditingController(text: "Supervisor");
+  final _nameCtl = TextEditingController();
+  final _titleCtl = TextEditingController();
   final _commentsCtl = TextEditingController();
   bool _hasSigned = false;
   bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.currentUser != null) {
+      _nameCtl.text = widget.currentUser!.name;
+      _titleCtl.text = widget.currentUser!.role;
+    } else {
+      _nameCtl.text = "Krishanka Jayasundhara";
+      _titleCtl.text = "Supervisor";
+    }
+  }
 
   void _submit() async {
     if (!_hasSigned) {
@@ -49,7 +62,8 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
 
   @override
   Widget build(BuildContext context) {
-    final bool allowed = widget.currentUserRole != null && (widget.currentUserRole == 'Supervisor' || widget.currentUserRole == 'Administrator');
+    final String? role = widget.currentUser?.role;
+    final bool allowed = role != null && (role == 'Supervisor' || role == 'Administrator');
 
     if (!allowed) {
       return Scaffold(
@@ -164,11 +178,29 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
                 // Supervisor Details
                 _sectionTitle(Icons.person, "Supervisor Details"),
                 const SizedBox(height: 12),
-                TextFormField(controller: _nameCtl, decoration: _inputDecor("Full Name *")),
+                TextFormField(
+                  controller: _nameCtl,
+                  readOnly: widget.currentUser != null,
+                  decoration: _inputDecor("Full Name *").copyWith(
+                    filled: widget.currentUser != null,
+                    fillColor: widget.currentUser != null ? Colors.grey.shade100 : null,
+                  ),
+                ),
                 const SizedBox(height: 12),
-                TextFormField(controller: _titleCtl, decoration: _inputDecor("Title/Position *")),
+                TextFormField(
+                  controller: _titleCtl,
+                  readOnly: widget.currentUser != null,
+                  decoration: _inputDecor("Title/Position *").copyWith(
+                    filled: widget.currentUser != null,
+                    fillColor: widget.currentUser != null ? Colors.grey.shade100 : null,
+                  ),
+                ),
                 const SizedBox(height: 12),
-                TextFormField(controller: _commentsCtl, maxLines: 3, decoration: _inputDecor("Comments & Notes")),
+                TextFormField(
+                  controller: _commentsCtl,
+                  maxLines: 3,
+                  decoration: _inputDecor("Comments & Notes"),
+                ),
                 
                 const SizedBox(height: 24),
                 
