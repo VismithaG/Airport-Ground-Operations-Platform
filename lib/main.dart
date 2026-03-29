@@ -2,9 +2,15 @@ import 'package:flutter/material.dart';
 import 'pages/loginpage.dart';
 import 'pages/dashboard.dart';
 import 'pages/adminpanel.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-void main() {
-  runApp(const GroundOperationsApp());
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Prepares Flutter for async start
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  ); // Connects app to Firebase
+  runApp(const GroundOperationsApp())
 }
 
 class GroundOperationsApp extends StatelessWidget {

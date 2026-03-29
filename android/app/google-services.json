@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1055006001372",
+    "project_id": "agop-finalyear",
+    "storage_bucket": "agop-finalyear.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1055006001372:android:fcb59f4b7a72e77e71cc19",
+        "android_client_info": {
+          "package_name": "com.example.agop_finalyear"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCuY0n9YOF-U8ph6uvgHeKD9zXLbYSNloE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
