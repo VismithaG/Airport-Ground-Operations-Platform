@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'dashboardheader.dart';
 import 'create_work_order/work_orders_list_page.dart';
 import 'approval/approval_list_page.dart'; // Import the approval list
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // -------------------- Models --------------------
 
@@ -46,14 +47,7 @@ class DashboardPage extends StatefulWidget {
 class _DashboardPageState extends State<DashboardPage> {
   int _selectedIndex = 0; // 0: Overview, 1: Work Orders
 
-  // Mock Data for the Overview Widget
-  final List<WorkOrder> _recentWorkOrders = [
-    WorkOrder(id: '22745', title: 'GPU Maintenance - Terminal A', details: 'Gate A12 • A330', status: 'In progress'),
-    WorkOrder(id: '22746', title: 'Emirates EK 650 - Service Request', details: 'Gate B05 • A350', status: 'Pending Approval'),
-    WorkOrder(id: '22745', title: 'Runaway Light Inspection', details: 'Gate A12 • A330', status: 'In progress'),
-    WorkOrder(id: '22745', title: 'Baggage Belt Repair', details: 'Gate A12 • A330', status: 'Pending Approval'),
-    WorkOrder(id: '22750', title: 'Sri Lankan UL 504 - Service Request', details: 'Gate B07 • A350', status: 'Completed'),
-  ];
+  // Using Firestore for recent work orders
 
   @override
   Widget build(BuildContext context) {
@@ -261,28 +255,54 @@ class _DashboardPageState extends State<DashboardPage> {
               children: [
                 Text("Recent Activity", style: TextStyle(fontSize: 16, color: Colors.grey[700])),
                 const SizedBox(height: 10),
-                ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _recentWorkOrders.length,
-                  separatorBuilder: (ctx, i) => const SizedBox(height: 16),
-                  itemBuilder: (context, index) {
-                    final wo = _recentWorkOrders[index];
-                    return Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(wo.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                              const SizedBox(height: 4),
-                              Text("${wo.id} • ${wo.details}", style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-                            ],
-                          ),
-                        ),
-                        _buildStatusBadge(wo.status),
-                      ],
+                StreamBuilder<QuerySnapshot>(
+                  stream: FirebaseFirestore.instance.collection('workOrders').snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return const Padding(
+                        padding: EdgeInsets.all(16.0),
+                        child: Text("No recent work orders found."),
+                      );
+                    }
+                    
+                    final docs = snapshot.data!.docs.take(5).toList(); // Show top 5
+                    
+                    return ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: docs.length,
+                      separatorBuilder: (ctx, i) => const SizedBox(height: 16),
+                      itemBuilder: (context, index) {
+                        final doc = docs[index];
+                        final data = doc.data() as Map<String, dynamic>;
+                        
+                        final wo = WorkOrder(
+                          id: data['id']?.toString() ?? doc.id,
+                          title: data['title']?.toString() ?? 'Untitled',
+                          details: data['details']?.toString() ?? 'No Details',
+                          status: data['status']?.toString() ?? 'Open',
+                        );
+                        
+                        return Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(wo.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                                  const SizedBox(height: 4),
+                                  Text("${wo.id} • ${wo.details}", style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                                ],
+                              ),
+                            ),
+                            _buildStatusBadge(wo.status),
+                          ],
+                        );
+                      },
                     );
                   },
                 ),

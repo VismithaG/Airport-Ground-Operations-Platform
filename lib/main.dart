@@ -3,6 +3,7 @@ import 'pages/loginpage.dart';
 import 'pages/dashboard.dart';
 import 'pages/adminpanel.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide UserInfo;
 import 'firebase_options.dart';
 
 void main() async {
@@ -10,7 +11,7 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   ); // Connects app to Firebase
-  runApp(const GroundOperationsApp())
+  runApp(const GroundOperationsApp());
 }
 
 class GroundOperationsApp extends StatelessWidget {
@@ -48,11 +49,29 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  void _handleLogin({
+  Future<void> _handleLogin({
     required String email,
     required String password,
     required bool rememberMe,
-  }) {
+  }) async {
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    } on FirebaseAuthException catch (e) {
+      debugPrint('Login failed: ${e.message}');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Login failed: ${e.message}')),
+        );
+      }
+      return;
+    } catch (e) {
+      debugPrint('Login error: $e');
+      return;
+    }
+
     final user = UserInfo(
       name: email.contains("admin") ? "Admin User" : "John Smith",
       role: email.contains("supervisor")
@@ -62,6 +81,8 @@ class _LoginScreenState extends State<LoginScreen> {
               : "Service Technician",
       email: email,
     );
+
+    if (!mounted) return;
 
     if (user.role == 'Administrator') {
       debugPrint('Main: routing to AdminPanelPage for ${user.email}');
