@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 // Import your create page to navigate to it
 import 'create_work_order_page.dart'; 
 import '../dashboard.dart'; // Import UserInfo
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // -------------------- Model --------------------
 // Ensure this matches the model in your create_work_order_page.dart
@@ -48,68 +49,7 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
   String _selectedStatus = 'All Statuses';
   String _selectedPriority = 'All Priorities';
 
-  // 2. Mock Data (Matches your screenshot)
-  final List<WorkOrder> _allWorkOrders = [
-    WorkOrder(
-      id: '22745',
-      title: 'Emirates EK 650',
-      aircraft: 'A330',
-      details: 'Additional service work order for Emirates flight EK',
-      location: 'Gate A12',
-      status: 'In Progress',
-      priority: 'High',
-      createdAt: DateTime.now(),
-      dueDate: DateTime(2025, 8, 18),
-      services: ['Unaccompanied Minor/Young...(2)', 'VIP or any other person v...(1)'],
-    ),
-    WorkOrder(
-      id: '22745',
-      title: 'Sri Lankan UL 504',
-      aircraft: 'A350',
-      details: 'Additional service work order for Sri Lankan flight UL',
-      location: 'Gate B07',
-      status: 'Open',
-      priority: 'Low',
-      createdAt: DateTime.now(),
-      dueDate: DateTime(2025, 8, 9),
-      services: ['Baggage ID - Interline on...(1)', 'Gate checks(3)'],
-    ),
-    WorkOrder(
-      id: '22745',
-      title: 'Emirates EK 650',
-      aircraft: 'A330',
-      details: 'Additional service work order for Emirates flight EK',
-      location: 'Gate A12',
-      status: 'Completed',
-      priority: 'Critical',
-      createdAt: DateTime.now(),
-      dueDate: DateTime(2025, 8, 18),
-      services: ['Unaccompanied Minor/Young...(2)', 'VIP or any other person v...(1)'],
-    ),
-    WorkOrder(
-      id: '22745',
-      title: 'Sri Lankan UL 504',
-      aircraft: 'A350',
-      details: 'Additional service work order for Sri Lankan flight UL',
-      location: 'Gate B07',
-      status: 'Open',
-      priority: 'Low',
-      createdAt: DateTime.now(),
-      dueDate: DateTime(2025, 8, 9),
-      services: ['Baggage ID - Interline on...(1)', 'Gate checks(3)'],
-    ),
-  ];
-
-  // 3. Filter Logic
-  List<WorkOrder> get _filteredOrders {
-    return _allWorkOrders.where((wo) {
-      final matchesSearch = wo.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-          wo.id.contains(_searchQuery);
-      final matchesStatus = _selectedStatus == 'All Statuses' || wo.status == _selectedStatus;
-      final matchesPriority = _selectedPriority == 'All Priorities' || wo.priority == _selectedPriority;
-      return matchesSearch && matchesStatus && matchesPriority;
-    }).toList();
-  }
+  // 2. Mock Data removed (using Firestore directly in StreamBuilder now)
 
   void _navigateToCreate() {
     Navigator.push(
@@ -119,8 +59,8 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
           currentUser: widget.currentUser,
           onBack: () => Navigator.pop(context),
           onSave: (newOrder) {
-            // In a real app, you would add this to the list via API or Provider
-            Navigator.pop(context);
+            // Document is saved directly to Firestore inside CreateWorkOrderPage.
+            // Keeping this empty allows CreateWorkOrderPage to show its animated success screen.
           },
         ),
       ),
@@ -144,45 +84,110 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
             _buildFilterBar(),
             const SizedBox(height: 24),
 
-            // Count Indicator
-            Text(
-              "Work Orders (${_filteredOrders.length})",
-              style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 10),
+            // Firestore Data Stream + Table
+            StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance.collection('workOrders').snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Padding(
+                    padding: EdgeInsets.all(40.0),
+                    child: Center(child: CircularProgressIndicator()),
+                  );
+                }
 
-            // Table Layout Wrapper for Horizontal Scrolling
-            LayoutBuilder(
-              builder: (context, constraints) {
-                const double minTableWidth = 1200.0;
-                final double tableWidth = constraints.maxWidth > minTableWidth 
-                    ? constraints.maxWidth 
-                    : minTableWidth;
-                    
-                return SingleChildScrollView(
-                  scrollDirection: Axis.horizontal,
-                  child: SizedBox(
-                    width: tableWidth,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        // Table Header
-                        _buildTableHeader(),
-                        const Divider(),
+                final docs = snapshot.hasData ? snapshot.data!.docs : [];
 
-                        // Data List
-                        ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _filteredOrders.length,
-                          separatorBuilder: (context, index) => const Divider(height: 1),
-                          itemBuilder: (context, index) {
-                            return _buildWorkOrderRow(_filteredOrders[index]);
-                          },
-                        ),
-                      ],
+                List<WorkOrder> allWorkOrders = docs.map((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  DateTime parsedDate = DateTime.now();
+                  if (data['createdAt'] is Timestamp) {
+                    parsedDate = (data['createdAt'] as Timestamp).toDate();
+                  } else if (data['createdAt'] is String) {
+                    parsedDate = DateTime.tryParse(data['createdAt']) ?? DateTime.now();
+                  }
+                  
+                  return WorkOrder(
+                    id: data['id']?.toString() ?? doc.id,
+                    title: data['title']?.toString() ?? 'Unknown',
+                    details: data['details']?.toString() ?? 'Service Request',
+                    location: data['location']?.toString() ?? 'TBD',
+                    aircraft: data['aircraft']?.toString() ?? 'Unknown',
+                    status: data['status']?.toString() ?? 'Open',
+                    priority: data['priority']?.toString() ?? 'Medium',
+                    createdAt: parsedDate,
+                    services: List<String>.from(data['services'] ?? []),
+                  );
+                }).toList();
+
+                // Locally sort by created descending
+                allWorkOrders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+
+                // Filter Logic
+                List<WorkOrder> filteredOrders = allWorkOrders.where((wo) {
+                  final matchesSearch = wo.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                      wo.id.toLowerCase().contains(_searchQuery.toLowerCase());
+                  final matchesStatus = _selectedStatus == 'All Statuses' || wo.status == _selectedStatus;
+                  final matchesPriority = _selectedPriority == 'All Priorities' || wo.priority == _selectedPriority;
+                  return matchesSearch && matchesStatus && matchesPriority;
+                }).toList();
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Count Indicator
+                    Text(
+                      "Work Orders (${filteredOrders.length})",
+                      style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold),
                     ),
-                  ),
+                    const SizedBox(height: 10),
+
+                    // Table Layout Wrapper for Horizontal Scrolling
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        const double minTableWidth = 1200.0;
+                        final double tableWidth = constraints.maxWidth > minTableWidth 
+                            ? constraints.maxWidth 
+                            : minTableWidth;
+                            
+                        return SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: SizedBox(
+                            width: tableWidth,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                // Table Header
+                                _buildTableHeader(),
+                                const Divider(),
+
+                                // Data List
+                                if (filteredOrders.isEmpty)
+                                  const Padding(
+                                    padding: EdgeInsets.symmetric(vertical: 40.0),
+                                    child: Center(
+                                      child: Text(
+                                        "No data is present",
+                                        style: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.w500),
+                                      ),
+                                    ),
+                                  )
+                                else
+                                  ListView.separated(
+                                    shrinkWrap: true,
+                                    physics: const NeverScrollableScrollPhysics(),
+                                    itemCount: filteredOrders.length,
+                                    separatorBuilder: (context, index) => const Divider(height: 1),
+                                    itemBuilder: (context, index) {
+                                      return _buildWorkOrderRow(filteredOrders[index]);
+                                    },
+                                  ),
+                              ],
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
                 );
               },
             ),
