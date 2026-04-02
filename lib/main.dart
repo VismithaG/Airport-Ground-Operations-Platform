@@ -60,13 +60,36 @@ class _LoginScreenState extends State<LoginScreen> {
         password: password,
       );
     } on FirebaseAuthException catch (e) {
-      debugPrint('Login failed: ${e.message}');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Login failed: ${e.message}')),
-        );
+      if (e.code == 'user-not-found' || e.code == 'invalid-credential' || e.code == 'wrong-password') {
+        // Automatic Demo Registration: If login fails because user doesn't exist, create it!
+        // (Note: 'invalid-credential' is the newest generic error for wrong pw/missing user)
+        try {
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+            email: email,
+            password: password,
+          );
+        } on FirebaseAuthException catch (signUpError) {
+          if (mounted) {
+            String msg = signUpError.message ?? 'Unknown error';
+            if (signUpError.code == 'weak-password') {
+              msg = 'Firebase requires passwords to be at least 6 characters.';
+            } else if (signUpError.code == 'email-already-in-use') {
+              msg = 'Incorrect password for this account.';
+            }
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed: $msg')));
+          }
+          return;
+        }
+      } else {
+        if (mounted) {
+          String errStr = e.message ?? 'Unknown error';
+          if (e.code == 'operation-not-allowed') {
+            errStr = 'Email/Password Authentication is not enabled in your Firebase Console!';
+          }
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed: $errStr')));
+        }
+        return;
       }
-      return;
     } catch (e) {
       debugPrint('Login error: $e');
       return;
