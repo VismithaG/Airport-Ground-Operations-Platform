@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 // Import your create page to navigate to it
 import 'create_work_order_page.dart'; 
+import '../dashboard.dart'; // Import UserInfo
 
 // -------------------- Model --------------------
 // Ensure this matches the model in your create_work_order_page.dart
@@ -33,7 +34,9 @@ class WorkOrder {
 // -------------------- Main List Page --------------------
 
 class WorkOrdersListPage extends StatefulWidget {
-  const WorkOrdersListPage({super.key});
+  final UserInfo? currentUser;
+
+  const WorkOrdersListPage({super.key, this.currentUser});
 
   @override
   State<WorkOrdersListPage> createState() => _WorkOrdersListPageState();
@@ -113,6 +116,7 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
       context,
       MaterialPageRoute(
         builder: (context) => CreateWorkOrderPage(
+          currentUser: widget.currentUser,
           onBack: () => Navigator.pop(context),
           onSave: (newOrder) {
             // In a real app, you would add this to the list via API or Provider

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'forgot_password_page.dart';
 
 class LoginForm extends StatefulWidget {
   final void Function({
@@ -165,7 +166,10 @@ class _LoginFormState extends State<LoginForm> {
                 children: [
                   GestureDetector(
                     onTap: () {
-                      // Implement forgot password logic or navigation
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => const ForgotPasswordPage()),
+                      );
                     },
                     child: const Text(
                       "Forgot your password?",

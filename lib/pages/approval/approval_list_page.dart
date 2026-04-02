@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'work_order_approval_page.dart';
+import '../dashboard.dart';
 
 class ApprovalListPage extends StatelessWidget {
-  final String? currentUserRole;
+  final UserInfo? currentUser;
 
-  const ApprovalListPage({super.key, this.currentUserRole});
+  const ApprovalListPage({super.key, this.currentUser});
 
   @override
   Widget build(BuildContext context) {
@@ -44,13 +45,14 @@ class ApprovalListPage extends StatelessWidget {
   }
 
   Widget _buildTrailing(BuildContext context, String id) {
-    final bool allowed = currentUserRole != null && (currentUserRole == 'Supervisor' || currentUserRole == 'Administrator');
+    final String? role = currentUser?.role;
+    final bool allowed = role != null && (role == 'Supervisor' || role == 'Administrator');
     if (allowed) {
       return ElevatedButton(
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => WorkOrderApprovalPage(workOrderId: id, currentUserRole: currentUserRole)),
+            MaterialPageRoute(builder: (context) => WorkOrderApprovalPage(workOrderId: id, currentUser: currentUser)),
           );
         },
         style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB71C1C), foregroundColor: Colors.white),

@@ -2,8 +2,15 @@ import 'package:flutter/material.dart';
 import 'pages/loginpage.dart';
 import 'pages/dashboard.dart';
 import 'pages/adminpanel.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide UserInfo;
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized(); // Prepares Flutter for async start
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  ); // Connects app to Firebase
   runApp(const GroundOperationsApp());
 }
 
@@ -42,11 +49,52 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  void _handleLogin({
+  Future<void> _handleLogin({
     required String email,
     required String password,
     required bool rememberMe,
-  }) {
+  }) async {
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+    } on FirebaseAuthException catch (e) {
+      if (e.code == 'user-not-found' || e.code == 'invalid-credential' || e.code == 'wrong-password') {
+        // Automatic Demo Registration: If login fails because user doesn't exist, create it!
+        // (Note: 'invalid-credential' is the newest generic error for wrong pw/missing user)
+        try {
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+            email: email,
+            password: password,
+          );
+        } on FirebaseAuthException catch (signUpError) {
+          if (mounted) {
+            String msg = signUpError.message ?? 'Unknown error';
+            if (signUpError.code == 'weak-password') {
+              msg = 'Firebase requires passwords to be at least 6 characters.';
+            } else if (signUpError.code == 'email-already-in-use') {
+              msg = 'Incorrect password for this account.';
+            }
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed: $msg')));
+          }
+          return;
+        }
+      } else {
+        if (mounted) {
+          String errStr = e.message ?? 'Unknown error';
+          if (e.code == 'operation-not-allowed') {
+            errStr = 'Email/Password Authentication is not enabled in your Firebase Console!';
+          }
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed: $errStr')));
+        }
+        return;
+      }
+    } catch (e) {
+      debugPrint('Login error: $e');
+      return;
+    }
+
     final user = UserInfo(
       name: email.contains("admin") ? "Admin User" : "John Smith",
       role: email.contains("supervisor")
@@ -56,6 +104,8 @@ class _LoginScreenState extends State<LoginScreen> {
               : "Service Technician",
       email: email,
     );
+
+    if (!mounted) return;
 
     if (user.role == 'Administrator') {
       debugPrint('Main: routing to AdminPanelPage for ${user.email}');
