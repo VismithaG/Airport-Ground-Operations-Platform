@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../dashboard.dart';
 import 'signature_pad.dart';
 import 'approval_success_page.dart';
@@ -44,7 +45,20 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
     }
 
     setState(() => _isSubmitting = true);
-    await Future.delayed(const Duration(seconds: 1)); // Simulate network
+    
+    try {
+      await FirebaseFirestore.instance.collection('workOrders').doc(widget.workOrderId).update({
+        'status': _decision == 'Approve' ? 'Approved' : 'Rejected',
+        'supervisorName': _nameCtl.text,
+        'decisionComments': _commentsCtl.text,
+      });
+    } catch (e) {
+      if (mounted) {
+         setState(() => _isSubmitting = false);
+         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update: $e')));
+      }
+      return;
+    }
 
     if (!mounted) return;
     
