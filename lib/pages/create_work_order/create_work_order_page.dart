@@ -4,6 +4,7 @@ import 'section_flight_info.dart';
 import 'section_services.dart';
 import 'section_review.dart'; // We will create this file below
 import '../dashboard.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 // --- Work Order Model ---
 class WorkOrder {
@@ -40,6 +41,7 @@ class CreateWorkOrderPage extends StatefulWidget {
 class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
   int _currentStep = 1;
   bool _isSubmitted = false;
+  bool _isSubmitting = false;
   
   // --- Form State ---
   // Flight Info
@@ -284,20 +286,54 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
             ),
           
           ElevatedButton(
-            onPressed: () {
+            onPressed: _isSubmitting ? null : () async {
               if (_currentStep < 3) {
                 setState(() => _currentStep++);
               } else {
-                setState(() => _isSubmitted = true);
-                widget.onSave(WorkOrder(
-                  id: _workOrderId,
-                  title: "${_carrierCtl.text} ${_flightNoCtl.text}",
-                  aircraft: _aircraftType,
-                  status: "Submitted",
-                  priority: _priority,
-                  createdAt: DateTime.now(),
-                  services: _selectedServices.values.expand((e) => e).toList(),
-                ));
+                setState(() => _isSubmitting = true);
+                
+                try {
+                  // Save to Firestore First
+                  await FirebaseFirestore.instance.collection('workOrders').doc(_workOrderId).set({
+                    'id': _workOrderId,
+                    'title': "${_carrierCtl.text} ${_flightNoCtl.text}",
+                    'aircraft': _aircraftType,
+                    'status': "Open", // Defaulting to Open instead of Submitted as per usual logic
+                    'priority': _priority,
+                    'createdAt': FieldValue.serverTimestamp(),
+                    'services': _selectedServices.values.expand((e) => e).toList(),
+                    'location': _gateCtl.text.isEmpty ? 'TBD' : _gateCtl.text,
+                    'details': _specialInstructionsCtl.text.isEmpty ? 'Service Request' : _specialInstructionsCtl.text,
+                    'department': _department,
+                  });
+
+                  if (mounted) {
+                    setState(() {
+                      _isSubmitting = false;
+                      _isSubmitted = true;
+                    });
+                    widget.onSave(WorkOrder(
+                      id: _workOrderId,
+                      title: "${_carrierCtl.text} ${_flightNoCtl.text}",
+                      aircraft: _aircraftType,
+                      status: "Open",
+                      priority: _priority,
+                      createdAt: DateTime.now(),
+                      services: _selectedServices.values.expand((e) => e).toList(),
+                    ));
+                  }
+                } catch (e) {
+                  debugPrint('Submission error: $e');
+                  if (mounted) {
+                    setState(() => _isSubmitting = false);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Failed to submit: $e'),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                  }
+                }
               }
             },
             style: ElevatedButton.styleFrom(
@@ -305,7 +341,9 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             ),
-            child: Text(_currentStep == 3 ? "Submit Work Order" : "Continue"),
+            child: _isSubmitting 
+              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+              : Text(_currentStep == 3 ? "Submit Work Order" : "Continue"),
           ),
         ],
       ),

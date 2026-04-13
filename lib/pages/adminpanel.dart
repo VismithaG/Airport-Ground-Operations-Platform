@@ -346,7 +346,12 @@ class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStat
             const SizedBox(width: 12),
             DropdownButton<String>(value: _userFilterStatus, items: const ['All', 'Active', 'Inactive', 'Suspended'].map((s) => DropdownMenuItem(value: s, child: Text(s))).toList(), onChanged: (v) { if (v == null) return; setState(() { _userFilterStatus = v; _filterUsers(); }); }),
             const SizedBox(width: 12),
-            ElevatedButton.icon(onPressed: () => _showUserDialog(), icon: const Icon(Icons.add), label: const Text('Add User')),
+            ElevatedButton.icon(onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CreateAccountPage()),
+              );
+            }, icon: const Icon(Icons.add), label: const Text('Add User')),
             const SizedBox(width: 8),
             OutlinedButton.icon(onPressed: _exportUsers, icon: const Icon(Icons.download), label: const Text('Export')),
           ]),
