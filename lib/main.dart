@@ -49,23 +49,39 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final List<String> _allowedEmails = const [
+    'vagbmf@airport.com',
+    'vismithasupervisor@airport.com',
+    'vgadmin@airport.com',
+  ];
+
   Future<void> _handleLogin({
     required String email,
     required String password,
     required bool rememberMe,
   }) async {
+    final String cleanEmail = email.trim().toLowerCase();
+
+    if (!_allowedEmails.contains(cleanEmail)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Unauthorized Account. Access Denied.')),
+        );
+      }
+      return;
+    }
+
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
+        email: cleanEmail,
         password: password,
       );
     } on FirebaseAuthException catch (e) {
       if (e.code == 'user-not-found' || e.code == 'invalid-credential' || e.code == 'wrong-password') {
-        // Automatic Demo Registration: If login fails because user doesn't exist, create it!
-        // (Note: 'invalid-credential' is the newest generic error for wrong pw/missing user)
+        // Automatic Registration ONLY for whitelisted users if they don't exist yet
         try {
           await FirebaseAuth.instance.createUserWithEmailAndPassword(
-            email: email,
+            email: cleanEmail,
             password: password,
           );
         } on FirebaseAuthException catch (signUpError) {
@@ -96,13 +112,13 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     final user = UserInfo(
-      name: email.contains("admin") ? "Admin User" : "John Smith",
-      role: email.contains("supervisor")
+      name: cleanEmail.contains("admin") ? "Admin User" : "John Smith",
+      role: cleanEmail.contains("supervisor")
           ? "Supervisor"
-          : email.contains("admin")
+          : cleanEmail.contains("admin")
               ? "Administrator"
               : "Service Technician",
-      email: email,
+      email: cleanEmail,
     );
 
     if (!mounted) return;
