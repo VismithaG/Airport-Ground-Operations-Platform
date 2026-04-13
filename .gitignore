@@ -51,3 +51,7 @@ build/
 .idea/
 .vscode/
 android/.gradle/
+
+# Secrets and Local Firebase Scripts
+service_Acc_key.json
+setAdmin.js
