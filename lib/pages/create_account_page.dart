@@ -200,7 +200,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                                 labelText: 'User Type *',
                                 border: OutlineInputBorder(),
                               ),
-                              value: _selectedUserType,
+                              initialValue: _selectedUserType,
                               items: _userTypes.map((type) {
                                 return DropdownMenuItem(
                                   value: type,
