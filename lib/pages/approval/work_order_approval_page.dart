@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../dashboard.dart';
 import 'signature_pad.dart';
 import 'approval_success_page.dart';
@@ -6,8 +7,9 @@ import 'approval_success_page.dart';
 class WorkOrderApprovalPage extends StatefulWidget {
   final String workOrderId;
   final UserInfo? currentUser;
+  final Map<String, dynamic>? workOrderData;
 
-  const WorkOrderApprovalPage({super.key, required this.workOrderId, this.currentUser});
+  const WorkOrderApprovalPage({super.key, required this.workOrderId, this.currentUser, this.workOrderData});
 
   @override
   State<WorkOrderApprovalPage> createState() => _WorkOrderApprovalPageState();
@@ -43,7 +45,20 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
     }
 
     setState(() => _isSubmitting = true);
-    await Future.delayed(const Duration(seconds: 1)); // Simulate network
+    
+    try {
+      await FirebaseFirestore.instance.collection('workOrders').doc(widget.workOrderId).update({
+        'status': _decision == 'Approve' ? 'Approved' : 'Rejected',
+        'supervisorName': _nameCtl.text,
+        'decisionComments': _commentsCtl.text,
+      });
+    } catch (e) {
+      if (mounted) {
+         setState(() => _isSubmitting = false);
+         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update: $e')));
+      }
+      return;
+    }
 
     if (!mounted) return;
     
@@ -131,7 +146,7 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                       decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(20)),
-                      child: const Text("Medium Priority", style: TextStyle(fontSize: 12, color: Colors.brown)),
+                      child: Text("${widget.workOrderData?['priority'] ?? 'Medium'} Priority", style: const TextStyle(fontSize: 12, color: Colors.brown)),
                     )
                   ],
                 ),
@@ -140,13 +155,13 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
                 // Flight Info (Read Only)
                 _sectionTitle(Icons.flight, "Work Order Details"),
                 const SizedBox(height: 12),
-                _readOnlyRow("Airline/Carrier", "Emirates", "Flight Number", "EK 650"),
-                _readOnlyRow("Aircraft", "A330 B2", "Gate", "A12"),
+                _readOnlyRow("Airline/Carrier", widget.workOrderData != null ? widget.workOrderData!['title'] : "Emirates", "Flight Number", ""),
+                _readOnlyRow("Aircraft", widget.workOrderData?['aircraft'] ?? "A330 B2", "Gate", widget.workOrderData?['location'] ?? "A12"),
                 const SizedBox(height: 16),
                 
                 // Request Info
-                _readOnlyField("Requested By", "Vismitha Gunasekara"),
-                _readOnlyField("Department", "Ground Operations"),
+                _readOnlyField("Requested By", "Maintenance System"),
+                _readOnlyField("Department", widget.workOrderData?['department'] ?? "Ground Operations"),
                 const SizedBox(height: 16),
                 
                 // Services List
@@ -155,9 +170,9 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: [
-                    "Ground Power Unit (GPU)", "Passenger Stairs", "VIP/CIP Lounge Access", "Priority Baggage"
-                  ].map((s) => Chip(label: Text(s, style: const TextStyle(fontSize: 12)), backgroundColor: Colors.grey[100])).toList(),
+                  children: (widget.workOrderData?['services'] as List<dynamic>? ?? [
+                     "Ground Power Unit (GPU)", "Passenger Stairs", "VIP/CIP Lounge Access", "Priority Baggage"
+                  ]).map((s) => Chip(label: Text(s.toString(), style: const TextStyle(fontSize: 12)), backgroundColor: Colors.grey[100])).toList(),
                 ),
                 
                 const SizedBox(height: 24),

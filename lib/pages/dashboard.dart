@@ -117,8 +117,84 @@ class _DashboardPageState extends State<DashboardPage> {
 
   // --- Overview Tab Content ---
   Widget _buildOverview() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(24.0),
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance.collection('workOrders').snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        int total = 0;
+        int open = 0;
+        int pending = 0;
+        int completedToday = 0;
+        int overdue = 0;
+
+        List<int> weekdayCounts = [0, 0, 0, 0, 0, 0, 0];
+
+        List<QueryDocumentSnapshot> docs = [];
+        if (snapshot.hasData) {
+          docs = snapshot.data!.docs;
+          total = docs.length;
+          final now = DateTime.now();
+
+          final int currentWeekday = now.weekday;
+          final DateTime startOfWeek = DateTime(now.year, now.month, now.day).subtract(Duration(days: currentWeekday - 1));
+
+          for (var doc in docs) {
+            final data = doc.data() as Map<String, dynamic>;
+            final status = data['status']?.toString() ?? 'Open';
+            
+            if (status == 'Open') open++;
+            if (status == 'Pending Approval') pending++;
+
+            DateTime createdAt = now;
+            if (data['createdAt'] is Timestamp) {
+              createdAt = (data['createdAt'] as Timestamp).toDate();
+            } else if (data['createdAt'] != null) {
+              createdAt = DateTime.tryParse(data['createdAt'].toString()) ?? now;
+            }
+
+            DateTime? dueDate;
+            if (data['dueDate'] is Timestamp) {
+              dueDate = (data['dueDate'] as Timestamp).toDate();
+            } else if (data['dueDate'] != null) {
+              dueDate = DateTime.tryParse(data['dueDate'].toString());
+            }
+
+            if (status == 'Completed') {
+              DateTime completedDate = createdAt;
+              if (data['updatedAt'] is Timestamp) {
+                completedDate = (data['updatedAt'] as Timestamp).toDate();
+              } else if (data['updatedAt'] != null) {
+                completedDate = DateTime.tryParse(data['updatedAt'].toString()) ?? createdAt;
+              }
+              if (completedDate.year == now.year && completedDate.month == now.month && completedDate.day == now.day) {
+                completedToday++;
+              }
+            }
+
+            if (dueDate != null) {
+              final dueDay = DateTime(dueDate.year, dueDate.month, dueDate.day);
+              final todayDay = DateTime(now.year, now.month, now.day);
+              if (dueDay.isBefore(todayDay) && status != 'Completed' && status != 'Closed') {
+                overdue++;
+              }
+            }
+
+            if (createdAt.isAfter(startOfWeek) || createdAt.isAtSameMomentAs(startOfWeek)) {
+              if (createdAt.weekday >= 1 && createdAt.weekday <= 7) {
+                weekdayCounts[createdAt.weekday - 1]++;
+              }
+            }
+          }
+        }
+
+        int maxCount = weekdayCounts.reduce((a, b) => a > b ? a : b);
+        if (maxCount == 0) maxCount = 1;
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -182,11 +258,11 @@ class _DashboardPageState extends State<DashboardPage> {
           const SizedBox(height: 30),
 
           // Status Cards
-          _buildStatusCard(Icons.settings_outlined, "Total Work Orders", "25"),
-          _buildStatusCard(Icons.access_time, "Open", "8"),
-          _buildStatusCard(Icons.history_edu, "Pending Approval", "5"), // Updated label
-          _buildStatusCard(Icons.check, "Completed Today", "7"),
-          _buildStatusCard(Icons.error_outline, "Overdue", "2"),
+          _buildStatusCard(Icons.settings_outlined, "Total Work Orders", "$total"),
+          _buildStatusCard(Icons.access_time, "Open", "$open"),
+          _buildStatusCard(Icons.history_edu, "Pending Approval", "$pending"), // Updated label
+          _buildStatusCard(Icons.check, "Completed Today", "$completedToday"),
+          _buildStatusCard(Icons.error_outline, "Overdue", "$overdue"),
           
           const SizedBox(height: 30),
 
@@ -212,28 +288,63 @@ class _DashboardPageState extends State<DashboardPage> {
                 LayoutBuilder(builder: (ctx, chartConstraints) {
                   final isNarrow = chartConstraints.maxWidth < 480;
                   final bars = [
-                    _buildBar("MON", 0.6),
-                    _buildBar("TUE", 0.35),
-                    _buildBar("WED", 0.4),
-                    _buildBar("THU", 0.38),
-                    _buildBar("FRI", 0.5),
+                    _buildBar("MON", weekdayCounts[0], maxCount),
+                    _buildBar("TUE", weekdayCounts[1], maxCount),
+                    _buildBar("WED", weekdayCounts[2], maxCount),
+                    _buildBar("THU", weekdayCounts[3], maxCount),
+                    _buildBar("FRI", weekdayCounts[4], maxCount),
+                    _buildBar("SAT", weekdayCounts[5], maxCount),
+                    _buildBar("SUN", weekdayCounts[6], maxCount),
                   ];
+
+                  Widget yAxis = SizedBox(
+                    height: 168,
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Text("$maxCount", style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                        Text("${(maxCount / 2).ceil()}", style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                        const Text("0", style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                        const SizedBox(height: 14),
+                      ],
+                    ),
+                  );
+
                   if (isNarrow) {
-                    return SizedBox(
-                      height: 180,
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(children: bars.map((b) => SizedBox(width: 64, child: b)).toList()),
-                      ),
+                    return Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        yAxis,
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: SizedBox(
+                            height: 180,
+                            child: SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(children: bars.map((b) => SizedBox(width: 64, child: b)).toList()),
+                            ),
+                          ),
+                        ),
+                      ],
                     );
                   }
-                  return SizedBox(
-                    height: 180,
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: bars,
-                    ),
+                  return Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      yAxis,
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: SizedBox(
+                          height: 180,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: bars,
+                          ),
+                        ),
+                      ),
+                    ],
                   );
                 }),
               ],
@@ -255,63 +366,54 @@ class _DashboardPageState extends State<DashboardPage> {
               children: [
                 Text("Recent Activity", style: TextStyle(fontSize: 16, color: Colors.grey[700])),
                 const SizedBox(height: 10),
-                StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance.collection('workOrders').snapshots(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
-                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                      return const Padding(
-                        padding: EdgeInsets.all(16.0),
-                        child: Text("No recent work orders found."),
+                if (docs.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text("No recent work orders found."),
+                  )
+                else
+                  ListView.separated(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: docs.take(5).length,
+                    separatorBuilder: (ctx, i) => const SizedBox(height: 16),
+                    itemBuilder: (context, index) {
+                      final doc = docs.take(5).toList()[index];
+                      final data = doc.data() as Map<String, dynamic>;
+                      
+                      final wo = WorkOrder(
+                        id: data['id']?.toString() ?? doc.id,
+                        title: data['title']?.toString() ?? 'Untitled',
+                        details: data['details']?.toString() ?? 'No Details',
+                        status: data['status']?.toString() ?? 'Open',
                       );
-                    }
-                    
-                    final docs = snapshot.data!.docs.take(5).toList(); // Show top 5
-                    
-                    return ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: docs.length,
-                      separatorBuilder: (ctx, i) => const SizedBox(height: 16),
-                      itemBuilder: (context, index) {
-                        final doc = docs[index];
-                        final data = doc.data() as Map<String, dynamic>;
-                        
-                        final wo = WorkOrder(
-                          id: data['id']?.toString() ?? doc.id,
-                          title: data['title']?.toString() ?? 'Untitled',
-                          details: data['details']?.toString() ?? 'No Details',
-                          status: data['status']?.toString() ?? 'Open',
-                        );
-                        
-                        return Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(wo.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-                                  const SizedBox(height: 4),
-                                  Text("${wo.id} • ${wo.details}", style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-                                ],
-                              ),
+                      
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(wo.title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                                const SizedBox(height: 4),
+                                Text("${wo.id} • ${wo.details}", style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                              ],
                             ),
-                            _buildStatusBadge(wo.status),
-                          ],
-                        );
-                      },
-                    );
-                  },
-                ),
+                          ),
+                          _buildStatusBadge(wo.status),
+                        ],
+                      );
+                    },
+                  ),
               ],
             ),
           ),
           const SizedBox(height: 20),
         ],
       ),
+    );
+      },
     );
   }
 
@@ -340,14 +442,20 @@ class _DashboardPageState extends State<DashboardPage> {
     );
   }
 
-  Widget _buildBar(String label, double fillPercentage) {
+  Widget _buildBar(String label, int count, int maxCount) {
+    double fillPercentage = maxCount > 0 ? count / maxCount : 0.0;
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Container(
-          width: 30,
-          height: 140 * fillPercentage,
-          decoration: BoxDecoration(color: Colors.grey[300], border: Border.all(color: Colors.black87)),
+        Tooltip(
+          message: "$count Work Orders",
+          preferBelow: false,
+          triggerMode: TooltipTriggerMode.tap,
+          child: Container(
+            width: 30,
+            height: 140 * fillPercentage,
+            decoration: BoxDecoration(color: Colors.grey[300], border: Border.all(color: Colors.black87)),
+          ),
         ),
         const SizedBox(height: 8),
         Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),

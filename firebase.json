@@ -1,1 +1,40 @@
-{"flutter":{"platforms":{"dart":{"lib/firebase_options.dart":{"projectId":"agop-finalyear","configurations":{"android":"1:1055006001372:android:fcb59f4b7a72e77e71cc19","ios":"1:1055006001372:ios:e8da67ef8b73e06471cc19","web":"1:1055006001372:web:5f9a7321d39d83bd71cc19"}}},"android":{"default":{"projectId":"agop-finalyear","appId":"1:1055006001372:android:fcb59f4b7a72e77e71cc19","fileOutput":"android/app/google-services.json"}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "agop-finalyear",
+          "configurations": {
+            "android": "1:1055006001372:android:fcb59f4b7a72e77e71cc19",
+            "ios": "1:1055006001372:ios:e8da67ef8b73e06471cc19",
+            "web": "1:1055006001372:web:5f9a7321d39d83bd71cc19"
+          }
+        }
+      },
+      "android": {
+        "default": {
+          "projectId": "agop-finalyear",
+          "appId": "1:1055006001372:android:fcb59f4b7a72e77e71cc19",
+          "fileOutput": "android/app/google-services.json"
+        }
+      }
+    }
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "disallowLegacyRuntimeConfig": true,
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log",
+        "*.local"
+      ],
+      "predeploy": [
+        "npm --prefix \"$RESOURCE_DIR\" run lint"
+      ]
+    }
+  ]
+}
