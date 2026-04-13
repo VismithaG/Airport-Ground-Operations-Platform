@@ -5,8 +5,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 
 class UserData {
+  final String uid;
   final String name;
   final String email;
   final String role;
@@ -14,7 +16,7 @@ class UserData {
   final String status; // Active, Inactive, Suspended
   final String lastLogin;
 
-  UserData(this.name, this.email, this.role, this.department, this.status, this.lastLogin);
+  UserData(this.uid, this.name, this.email, this.role, this.department, this.status, this.lastLogin);
 }
 
 class ActivityLogData {
@@ -44,7 +46,7 @@ class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStat
   // Mock data stores
   final List<UserData> _users = List.generate(
     10,
-    (i) => UserData('User $i', 'user$i@example.com', i % 3 == 0 ? 'Administrator' : 'Technician', 'Ground Ops', i % 4 == 0 ? 'Suspended' : 'Active', '2026-02-1${i + 1}'),
+    (i) => UserData('mock-uid-$i', 'User $i', 'user$i@example.com', i % 3 == 0 ? 'Administrator' : 'Technician', 'Ground Ops', i % 4 == 0 ? 'Suspended' : 'Active', '2026-02-1${i + 1}'),
   );
 
   final List<ActivityLogData> _logs = List.generate(
@@ -59,6 +61,23 @@ class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStat
   final TextEditingController _logSearchController = TextEditingController();
   String _userFilterStatus = 'All';
   String _logSeverityFilter = 'All';
+
+  Future<void> authorizeUser(String userUid) async {
+    try {
+      HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('grantAuthorizedClaim');
+      final result = await callable.call(<String, dynamic>{
+        'uid': userUid,
+      });
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(result.data['message'] ?? 'Authorized successfully')));
+    } on FirebaseFunctionsException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: ${e.message}')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('An unexpected error occurred.')));
+    }
+  }
 
   // Security/System settings (mock)
   bool _requireUppercase = true;
@@ -182,7 +201,7 @@ class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStat
     );
 
     if (result == true) {
-      final newUser = UserData(nameCtl.text, emailCtl.text, roleCtl.text, deptCtl.text, status, DateTime.now().toIso8601String());
+      final newUser = UserData(editUser?.uid ?? 'new-uid-${DateTime.now().millisecondsSinceEpoch}', nameCtl.text, emailCtl.text, roleCtl.text, deptCtl.text, status, DateTime.now().toIso8601String());
       setState(() {
         if (editUser != null) {
           final idx = _users.indexOf(editUser);
@@ -355,7 +374,7 @@ class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStat
                     DataCell(Text(user.department)),
                     DataCell(_buildStatusBadge(user.status)),
                     DataCell(Text(user.lastLogin)),
-                    DataCell(Row(children: [IconButton(icon: const Icon(Icons.visibility_outlined, size: 18, color: Colors.grey), onPressed: () => _viewUser(user)), IconButton(icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.blue), onPressed: () => _showUserDialog(editUser: user)), IconButton(icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red), onPressed: () => _confirmDeleteUser(user))])),
+                    DataCell(Row(children: [Tooltip(message: 'Approve User', child: IconButton(icon: const Icon(Icons.verified_user, size: 18, color: Colors.green), onPressed: () => authorizeUser(user.uid))), IconButton(icon: const Icon(Icons.visibility_outlined, size: 18, color: Colors.grey), onPressed: () => _viewUser(user)), IconButton(icon: const Icon(Icons.edit_outlined, size: 18, color: Colors.blue), onPressed: () => _showUserDialog(editUser: user)), IconButton(icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red), onPressed: () => _confirmDeleteUser(user))])),
                   ]);
                 }).toList(),
               ),
