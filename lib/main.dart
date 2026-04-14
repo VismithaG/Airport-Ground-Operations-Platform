@@ -4,6 +4,7 @@ import 'pages/dashboard.dart';
 import 'pages/adminpanel.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide UserInfo;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -49,12 +50,6 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final List<String> _allowedEmails = const [
-    'vagbmf@airport.com',
-    'vismithasupervisor@airport.com',
-    'vgadmin@airport.com',
-  ];
-
   Future<void> _handleLogin({
     required String email,
     required String password,
@@ -62,62 +57,52 @@ class _LoginScreenState extends State<LoginScreen> {
   }) async {
     final String cleanEmail = email.trim().toLowerCase();
 
-    if (!_allowedEmails.contains(cleanEmail)) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Unauthorized Account. Access Denied.')),
-        );
-      }
-      return;
-    }
-
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: cleanEmail,
         password: password,
       );
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'user-not-found' || e.code == 'invalid-credential' || e.code == 'wrong-password') {
-        // Automatic Registration ONLY for whitelisted users if they don't exist yet
-        try {
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-            email: cleanEmail,
-            password: password,
-          );
-        } on FirebaseAuthException catch (signUpError) {
-          if (mounted) {
-            String msg = signUpError.message ?? 'Unknown error';
-            if (signUpError.code == 'weak-password') {
-              msg = 'Firebase requires passwords to be at least 6 characters.';
-            } else if (signUpError.code == 'email-already-in-use') {
-              msg = 'Incorrect password for this account.';
-            }
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed: $msg')));
-          }
-          return;
+      if (mounted) {
+        String msg = e.message ?? 'Unknown error';
+        if (e.code == 'user-not-found' || e.code == 'invalid-credential' || e.code == 'wrong-password') {
+          msg = 'Invalid credentials for this account.';
+        } else if (e.code == 'operation-not-allowed') {
+          msg = 'Email/Password Authentication is not enabled in your Firebase Console!';
         }
-      } else {
-        if (mounted) {
-          String errStr = e.message ?? 'Unknown error';
-          if (e.code == 'operation-not-allowed') {
-            errStr = 'Email/Password Authentication is not enabled in your Firebase Console!';
-          }
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed: $errStr')));
-        }
-        return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed: $msg')));
       }
+      return;
     } catch (e) {
       debugPrint('Login error: $e');
       return;
     }
 
+    String displayName = "System User";
+    String roleName = "Service Technician";
+
+    try {
+      final userRecord = FirebaseAuth.instance.currentUser;
+      if (userRecord != null) {
+        final userDoc = await FirebaseFirestore.instance.collection('users').doc(userRecord.uid).get();
+        if (userDoc.exists) {
+          final data = userDoc.data()!;
+          displayName = data['fullName'] ?? displayName;
+          roleName = data['userType'] ?? roleName;
+          
+          // Map "Admin" from firestore explicitly to Administrator due to routing logic below
+          if (roleName.toLowerCase() == 'admin' || roleName.toLowerCase() == 'administrator') {
+             roleName = 'Administrator';
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching user profile from Firestore: $e');
+    }
+
     final user = UserInfo(
-      name: cleanEmail.contains("admin") ? "Admin User" : "John Smith",
-      role: cleanEmail.contains("supervisor")
-          ? "Supervisor"
-          : cleanEmail.contains("admin")
-              ? "Administrator"
-              : "Service Technician",
+      name: displayName,
+      role: roleName,
       email: cleanEmail,
     );
 
