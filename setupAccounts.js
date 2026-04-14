@@ -42,6 +42,18 @@ async function setup() {
       await admin.auth().setCustomUserClaims(userRecord.uid, claims);
       console.log(`Verified custom claims for: ${acc.email}`);
 
+      // Sync into Firestore 'users' collection to act as their profile backing
+      const db = admin.firestore();
+      await db.collection('users').doc(userRecord.uid).set({
+        fullName: acc.displayName,
+        workEmail: acc.email,
+        userType: acc.email === "vgadmin@airport.com" ? "Admin" : "Supervisor",
+        department: "System Configuration",
+        status: "Active",
+        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      }, { merge: true });
+      console.log(`Synced Firestore profile mapping for: ${acc.email}`);
+
     } catch(err) {
       console.error(`Failed to process ${acc.email}:`, err.message);
     }

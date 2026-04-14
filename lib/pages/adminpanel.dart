@@ -3,9 +3,11 @@
 
 // ignore_for_file: curly_braces_in_flow_control_structures, deprecated_member_use, duplicate_ignore
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_functions/cloud_functions.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'create_account_page.dart';
 
 class UserData {
@@ -44,11 +46,9 @@ class AdminPanelPage extends StatefulWidget {
 class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStateMixin {
   late final TabController _tabController;
 
-  // Mock data stores
-  final List<UserData> _users = List.generate(
-    10,
-    (i) => UserData('mock-uid-$i', 'User $i', 'user$i@example.com', i % 3 == 0 ? 'Administrator' : 'Technician', 'Ground Ops', i % 4 == 0 ? 'Suspended' : 'Active', '2026-02-1${i + 1}'),
-  );
+  StreamSubscription? _usersSub;
+  List<UserData> _users = [];
+  List<UserData> _displayedUsers = [];
 
   final List<ActivityLogData> _logs = List.generate(
     16,
@@ -56,7 +56,6 @@ class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStat
   );
 
   // UI state
-  late List<UserData> _displayedUsers;
   late List<ActivityLogData> _displayedLogs;
   final TextEditingController _userSearchController = TextEditingController();
   final TextEditingController _logSearchController = TextEditingController();
@@ -111,12 +110,31 @@ class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStat
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _displayedUsers = List.from(_users);
     _displayedLogs = List.from(_logs);
+
+    _usersSub = FirebaseFirestore.instance.collection('users').snapshots().listen((snap) {
+      if (!mounted) return;
+      setState(() {
+        _users = snap.docs.map((doc) {
+          final data = doc.data();
+          return UserData(
+            doc.id,
+            data['fullName'] ?? 'Unknown',
+            data['workEmail'] ?? '',
+            data['userType'] ?? 'Service Technician',
+            data['department'] ?? 'Ground Operations',
+            data['status'] ?? 'Active',
+            data['lastLogin'] ?? '',
+          );
+        }).toList();
+        _filterUsers();
+      });
+    });
   }
 
   @override
   void dispose() {
+    _usersSub?.cancel();
     _tabController.dispose();
     _userSearchController.dispose();
     _logSearchController.dispose();
@@ -202,26 +220,22 @@ class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStat
     );
 
     if (result == true) {
-      final newUser = UserData(editUser?.uid ?? 'new-uid-${DateTime.now().millisecondsSinceEpoch}', nameCtl.text, emailCtl.text, roleCtl.text, deptCtl.text, status, DateTime.now().toIso8601String());
-      setState(() {
-        if (editUser != null) {
-          final idx = _users.indexOf(editUser);
-          if (idx >= 0) _users[idx] = newUser;
-        } else {
-          _users.insert(0, newUser);
-        }
-        _filterUsers();
-      });
+      if (editUser != null) {
+        await FirebaseFirestore.instance.collection('users').doc(editUser.uid).update({
+          'fullName': nameCtl.text,
+          'workEmail': emailCtl.text,
+          'userType': roleCtl.text,
+          'department': deptCtl.text,
+          'status': status,
+        });
+      }
     }
   }
 
   Future<void> _confirmDeleteUser(UserData user) async {
     final ok = await showDialog<bool>(context: context, builder: (ctx) => AlertDialog(title: const Text('Delete user'), content: Text('Delete ${user.name}?'), actions: [TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancel')), ElevatedButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('Delete'))]));
     if (ok == true) {
-      setState(() {
-        _users.remove(user);
-        _filterUsers();
-      });
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).delete();
     }
   }
 
