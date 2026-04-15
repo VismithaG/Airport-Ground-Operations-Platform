@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import '../firebase_options.dart';
 
 class CreateAccountPage extends StatefulWidget {
@@ -66,6 +67,12 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
 
   Future<void> _createAccount() async {
     if (!_formKey.currentState!.validate()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Missing or invalid details. Please check the form.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
       return;
     }
 
@@ -73,9 +80,11 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
       _isLoading = true;
     });
 
+    FirebaseApp? adminApp;
+
     try {
       // 1. Initialize a secondary Firebase App to prevent logging out the current admin
-      final adminApp = await Firebase.initializeApp(
+      adminApp = await Firebase.initializeApp(
         name: 'SecondaryApp',
         options: DefaultFirebaseOptions.currentPlatform,
       );
@@ -91,7 +100,16 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
       final user = userCredential.user;
 
       if (user != null) {
-        // 3. Save additional user data in Firestore
+        // 3. Call Cloud Function to assign claims
+        try {
+          final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('grantAuthorizedClaim');
+          await callable.call({'uid': user.uid});
+          debugPrint('Successfully set authorized claim for \${user.uid}');
+        } catch (e) {
+          debugPrint('Failed to set authorized claim: \$e');
+        }
+
+        // 4. Save additional user data in Firestore
         // We use the default Firestore instance since the Admin is still logged in there
         // and supposedly has write access to create users.
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
@@ -113,29 +131,66 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
           'lastLogin': '', 
         });
 
-        // 4. Clean up the secondary app instance
-        await adminApp.delete();
-
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Account created successfully')),
+            const SnackBar(
+              content: Text('Account registration successful!'),
+              backgroundColor: Colors.green,
+            ),
           );
           Navigator.of(context).pop(); // Return to Admin Panel
         }
       }
     } on FirebaseAuthException catch (e) {
       if (mounted) {
+        String msg = 'An error occurred during registration.';
+        if (e.code == 'email-already-in-use') {
+          msg = 'This account already exists. Please use a different email.';
+        } else if (e.code == 'invalid-email') {
+          msg = 'Invalid email address provided.';
+        } else if (e.code == 'weak-password') {
+          msg = 'The password provided is too weak (minimum 6 characters).';
+        } else if (e.code == 'operation-not-allowed') {
+          msg = 'Account creation is disabled in Firebase.';
+        } else {
+          msg = e.message ?? msg;
+        }
+
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error creating account: ${e.message}')),
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: Colors.redAccent,
+          ),
+        );
+      }
+    } on FirebaseException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Database Error: ${e.message}'),
+            backgroundColor: Colors.redAccent,
+          ),
         );
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('An unexpected error occurred: $e')),
+          const SnackBar(
+            content: Text('An unexpected error occurred processing the request.'),
+            backgroundColor: Colors.redAccent,
+          ),
         );
       }
     } finally {
+      // 4. Clean up the secondary app instance reliably even if errors crash the flow!
+      try {
+        if (adminApp != null) {
+          await adminApp.delete();
+        }
+      } catch (cleanupException) {
+        debugPrint('Secondary Resource Deletion Exception: $cleanupException');
+      }
+
       if (mounted) {
         setState(() {
           _isLoading = false;
