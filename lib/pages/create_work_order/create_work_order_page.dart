@@ -5,6 +5,7 @@ import 'section_services.dart';
 import 'section_review.dart'; // We will create this file below
 import '../dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide UserInfo;
 
 // --- Work Order Model ---
 class WorkOrder {
@@ -293,6 +294,9 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
                 setState(() => _isSubmitting = true);
                 
                 try {
+                  // Force refresh the auth token so new claims (like 'authorized') are respected instantly
+                  await FirebaseAuth.instance.currentUser?.getIdToken(true);
+
                   // Save to Firestore First
                   await FirebaseFirestore.instance.collection('workOrders').doc(_workOrderId).set({
                     'id': _workOrderId,

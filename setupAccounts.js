@@ -10,7 +10,8 @@ if (!admin.apps.length) {
 const accounts = [
   { email: "vagbmf@airport.com", password: "vagbmf12", displayName: "Airport Staff" },
   { email: "vismithasupervisor@airport.com", password: "vismitha12", displayName: "Supervisor Vismitha" },
-  { email: "vgadmin@airport.com", password: "admin1234", displayName: "Service Admin" }
+  { email: "vgadmin@airport.com", password: "admin1234", displayName: "Service Admin" },
+  { email: "technician@airport.com", password: "technician12", displayName: "Technician" }
 ];
 
 async function setup() {
@@ -33,11 +34,11 @@ async function setup() {
           throw err;
         }
       }
-      
+
       // Auto-assign custom authorization claims over to them so they don't get stuck later
       let claims = { authorized: true };
       if (acc.email === "vgadmin@airport.com") {
-         claims.admin = true;
+        claims.admin = true;
       }
       await admin.auth().setCustomUserClaims(userRecord.uid, claims);
       console.log(`Verified custom claims for: ${acc.email}`);
@@ -47,14 +48,14 @@ async function setup() {
       await db.collection('users').doc(userRecord.uid).set({
         fullName: acc.displayName,
         workEmail: acc.email,
-        userType: acc.email === "vgadmin@airport.com" ? "Admin" : "Supervisor",
+        userType: acc.email === "vgadmin@airport.com" ? "Admin" : (acc.email === "vismithasupervisor@airport.com" ? "Supervisor" : "Average User"),
         department: "System Configuration",
         status: "Active",
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
       }, { merge: true });
       console.log(`Synced Firestore profile mapping for: ${acc.email}`);
 
-    } catch(err) {
+    } catch (err) {
       console.error(`Failed to process ${acc.email}:`, err.message);
     }
   }

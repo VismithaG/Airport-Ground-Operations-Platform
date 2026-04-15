@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_functions/cloud_functions.dart';
 import '../firebase_options.dart';
 
 class CreateAccountPage extends StatefulWidget {
@@ -99,7 +100,16 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
       final user = userCredential.user;
 
       if (user != null) {
-        // 3. Save additional user data in Firestore
+        // 3. Call Cloud Function to assign claims
+        try {
+          final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('grantAuthorizedClaim');
+          await callable.call({'uid': user.uid});
+          debugPrint('Successfully set authorized claim for \${user.uid}');
+        } catch (e) {
+          debugPrint('Failed to set authorized claim: \$e');
+        }
+
+        // 4. Save additional user data in Firestore
         // We use the default Firestore instance since the Admin is still logged in there
         // and supposedly has write access to create users.
         await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
