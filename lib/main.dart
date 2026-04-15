@@ -4,6 +4,7 @@ import 'pages/dashboard.dart';
 import 'pages/adminpanel.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide UserInfo;
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -54,55 +55,55 @@ class _LoginScreenState extends State<LoginScreen> {
     required String password,
     required bool rememberMe,
   }) async {
+    final String cleanEmail = email.trim().toLowerCase();
+
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
+        email: cleanEmail,
         password: password,
       );
     } on FirebaseAuthException catch (e) {
-      if (e.code == 'user-not-found' || e.code == 'invalid-credential' || e.code == 'wrong-password') {
-        // Automatic Demo Registration: If login fails because user doesn't exist, create it!
-        // (Note: 'invalid-credential' is the newest generic error for wrong pw/missing user)
-        try {
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-            email: email,
-            password: password,
-          );
-        } on FirebaseAuthException catch (signUpError) {
-          if (mounted) {
-            String msg = signUpError.message ?? 'Unknown error';
-            if (signUpError.code == 'weak-password') {
-              msg = 'Firebase requires passwords to be at least 6 characters.';
-            } else if (signUpError.code == 'email-already-in-use') {
-              msg = 'Incorrect password for this account.';
-            }
-            ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed: $msg')));
-          }
-          return;
+      if (mounted) {
+        String msg = e.message ?? 'Unknown error';
+        if (e.code == 'user-not-found' || e.code == 'invalid-credential' || e.code == 'wrong-password') {
+          msg = 'Invalid credentials for this account.';
+        } else if (e.code == 'operation-not-allowed') {
+          msg = 'Email/Password Authentication is not enabled in your Firebase Console!';
         }
-      } else {
-        if (mounted) {
-          String errStr = e.message ?? 'Unknown error';
-          if (e.code == 'operation-not-allowed') {
-            errStr = 'Email/Password Authentication is not enabled in your Firebase Console!';
-          }
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed: $errStr')));
-        }
-        return;
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Login failed: $msg')));
       }
+      return;
     } catch (e) {
       debugPrint('Login error: $e');
       return;
     }
 
+    String displayName = "System User";
+    String roleName = "Service Technician";
+
+    try {
+      final userRecord = FirebaseAuth.instance.currentUser;
+      if (userRecord != null) {
+        final userDoc = await FirebaseFirestore.instance.collection('users').doc(userRecord.uid).get();
+        if (userDoc.exists) {
+          final data = userDoc.data()!;
+          displayName = data['fullName'] ?? displayName;
+          roleName = data['userType'] ?? roleName;
+          
+          // Map "Admin" from firestore explicitly to Administrator due to routing logic below
+          if (roleName.toLowerCase() == 'admin' || roleName.toLowerCase() == 'administrator') {
+             roleName = 'Administrator';
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching user profile from Firestore: $e');
+    }
+
     final user = UserInfo(
-      name: email.contains("admin") ? "Admin User" : "John Smith",
-      role: email.contains("supervisor")
-          ? "Supervisor"
-          : email.contains("admin")
-              ? "Administrator"
-              : "Service Technician",
-      email: email,
+      name: displayName,
+      role: roleName,
+      email: cleanEmail,
     );
 
     if (!mounted) return;

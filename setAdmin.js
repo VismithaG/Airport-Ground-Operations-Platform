@@ -1,7 +1,7 @@
-const admin = require("firebase-admin");
+const admin = require("./functions/node_modules/firebase-admin");
 
 // 1. Provide the direct local path to your Service Account JSON file.
-const serviceAccount = require("./path-to-your-service-account-key.json");
+const serviceAccount = require("./service_Acc_key.json");
 
 // 2. Initialize App locally with admin credentials
 admin.initializeApp({
@@ -9,7 +9,7 @@ admin.initializeApp({
 });
 
 // 3. Replace with your actual UID from the Firebase Authentication console
-const myUid = "YOUR_OWN_FIREBASE_UID";
+const myUid = "v9LOaz6PdJPEt7UwGLJqEinrv2I3";
 
 admin.auth().setCustomUserClaims(myUid, { admin: true, authorized: true })
   .then(() => {

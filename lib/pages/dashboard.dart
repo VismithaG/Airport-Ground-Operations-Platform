@@ -305,7 +305,7 @@ class _DashboardPageState extends State<DashboardPage> {
                       children: [
                         Text("$maxCount", style: const TextStyle(fontSize: 10, color: Colors.grey)),
                         Text("${(maxCount / 2).ceil()}", style: const TextStyle(fontSize: 10, color: Colors.grey)),
-                        const Text("0", style: const TextStyle(fontSize: 10, color: Colors.grey)),
+                        const Text("0", style: TextStyle(fontSize: 10, color: Colors.grey)),
                         const SizedBox(height: 14),
                       ],
                     ),
