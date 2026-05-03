@@ -77,6 +77,7 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
     if (widget.currentUser != null) {
       _requestedByCtl.text = widget.currentUser!.name;
       _contactCtl.text = widget.currentUser!.email;
+      _department = widget.currentUser!.department;
     }
   }
 

@@ -12,7 +12,8 @@ class UserInfo {
   final String role;
   final String email;
   final String designation;
-  UserInfo({required this.name, required this.role, required this.email, this.designation = ''});
+  final String department;
+  UserInfo({required this.name, required this.role, required this.email, this.designation = '', this.department = 'Ground Operations'});
 }
 
 class WorkOrder {

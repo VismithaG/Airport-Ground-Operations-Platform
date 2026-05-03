@@ -118,9 +118,9 @@ class SectionFlightInfo extends StatelessWidget {
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: priority,
-                decoration: _inputDecoration("Priority Level").copyWith(filled: isReadOnlyMode, fillColor: isReadOnlyMode ? Colors.grey.shade100 : null),
+                decoration: _inputDecoration("Priority Level"),
                 items: ["Low", "Medium", "High", "Critical"].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-                onChanged: isReadOnlyMode ? null : onPriorityChanged,
+                onChanged: onPriorityChanged,
               ),
             ],
           ),

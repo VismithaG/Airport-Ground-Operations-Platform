@@ -81,6 +81,7 @@ class _LoginScreenState extends State<LoginScreen> {
     String displayName = "System User";
     String roleName = "Service Technician";
     String designationName = "";
+    String departmentName = "Ground Operations";
 
     try {
       final userRecord = FirebaseAuth.instance.currentUser;
@@ -91,6 +92,7 @@ class _LoginScreenState extends State<LoginScreen> {
           displayName = data['fullName'] ?? displayName;
           roleName = data['userType'] ?? roleName;
           designationName = data['designation'] ?? designationName;
+          departmentName = data['department'] ?? departmentName;
           
           // Map "Admin" from firestore explicitly to Administrator due to routing logic below
           if (roleName.toLowerCase() == 'admin' || roleName.toLowerCase() == 'administrator') {
@@ -107,6 +109,7 @@ class _LoginScreenState extends State<LoginScreen> {
       role: roleName,
       email: cleanEmail,
       designation: designationName,
+      department: departmentName,
     );
 
     if (!mounted) return;
