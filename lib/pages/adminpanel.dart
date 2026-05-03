@@ -96,6 +96,8 @@ class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStat
   String _lockoutDuration = '15m';
   bool _twoFactor = false;
 
+  List<String> _allowedIpRanges = ['192.168.1.0/24', '10.0.0.0/16'];
+
   String _companyName = 'AGO Platform';
   String _defaultTimezone = 'UTC';
   bool _maintenanceMode = false;
@@ -139,6 +141,29 @@ class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStat
     _userSearchController.dispose();
     _logSearchController.dispose();
     super.dispose();
+  }
+
+  Future<void> _showAddIpDialog() async {
+    final ipCtl = TextEditingController();
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Add IP Range'),
+        content: TextField(
+          controller: ipCtl,
+          decoration: const InputDecoration(labelText: 'IP Range (e.g., 172.16.0.0/12)'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(onPressed: () => Navigator.pop(ctx, ipCtl.text.trim()), child: const Text('Add')),
+        ],
+      ),
+    );
+    if (result != null && result.isNotEmpty) {
+      setState(() {
+        _allowedIpRanges.add(result);
+      });
+    }
   }
 
   // -------------------- Helpers --------------------
@@ -483,9 +508,8 @@ class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStat
               _buildSwitchRow('Two-Factor Authentication', _twoFactor, (v) => setState(() => _twoFactor = v)),
               const Divider(),
               const Padding(padding: EdgeInsets.symmetric(vertical: 8.0), child: Text('Allowed IP Ranges', style: TextStyle(fontWeight: FontWeight.bold))),
-              const ListTile(dense: true, title: Text('192.168.1.0/24'), trailing: Icon(Icons.delete, size: 16)),
-              const ListTile(dense: true, title: Text('10.0.0.0/16'), trailing: Icon(Icons.delete, size: 16)),
-              OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.add, size: 16), label: const Text('Add Range')),
+              ..._allowedIpRanges.map((ip) => ListTile(dense: true, title: Text(ip), trailing: IconButton(icon: const Icon(Icons.delete, size: 16), onPressed: () => setState(() => _allowedIpRanges.remove(ip))))).toList(),
+              OutlinedButton.icon(onPressed: _showAddIpDialog, icon: const Icon(Icons.add, size: 16), label: const Text('Add Range')),
             ]),
             const SizedBox(height: 16),
             Container(padding: const EdgeInsets.all(16), decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12), border: Border.all(color: Colors.grey.shade300)), child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [const Text('Security Status Overview', style: TextStyle(fontWeight: FontWeight.bold)), const SizedBox(height: 12), _buildSecurityStatusItem('System Secure', 'All security checks passed', Colors.green, Icons.check_circle), const SizedBox(height: 12), _buildSecurityStatusItem('1 Warning', 'Failed login attempts detected', Colors.orange, Icons.warning), const SizedBox(height: 12), _buildSecurityStatusItem('Security Score', '92/100 - Excellent', Colors.blue, Icons.shield),])),
@@ -519,9 +543,8 @@ class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStat
               _buildSwitchRow('Two-Factor Authentication', _twoFactor, (v) => setState(() => _twoFactor = v)),
               const Divider(),
               const Padding(padding: EdgeInsets.symmetric(vertical: 8.0), child: Text('Allowed IP Ranges', style: TextStyle(fontWeight: FontWeight.bold))),
-              const ListTile(dense: true, title: Text('192.168.1.0/24'), trailing: Icon(Icons.delete, size: 16)),
-              const ListTile(dense: true, title: Text('10.0.0.0/16'), trailing: Icon(Icons.delete, size: 16)),
-              OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.add, size: 16), label: const Text('Add Range')),
+              ..._allowedIpRanges.map((ip) => ListTile(dense: true, title: Text(ip), trailing: IconButton(icon: const Icon(Icons.delete, size: 16), onPressed: () => setState(() => _allowedIpRanges.remove(ip))))).toList(),
+              OutlinedButton.icon(onPressed: _showAddIpDialog, icon: const Icon(Icons.add, size: 16), label: const Text('Add Range')),
             ]),
           ])),
           const SizedBox(width: 24),
