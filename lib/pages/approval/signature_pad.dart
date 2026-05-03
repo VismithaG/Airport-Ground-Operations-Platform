@@ -35,50 +35,58 @@ class SignaturePadState extends State<SignaturePad> {
         borderRadius: BorderRadius.circular(8),
         child: Stack(
           children: [
-          // The Drawing Area
-          GestureDetector(
-            onPanUpdate: (details) {
-              setState(() {
-                RenderBox renderBox = context.findRenderObject() as RenderBox;
-                points.add(renderBox.globalToLocal(details.globalPosition));
-                widget.onSigned(true);
-              });
-            },
-            onPanEnd: (details) {
-              points.add(null); // End of line
-            },
-            child: CustomPaint(
-              painter: _SignaturePainter(points),
-              size: Size.infinite,
-            ),
-          ),
-          
-          // Background Placeholder Text
-          if (points.isEmpty)
-            const Center(
-              child: Text(
-                "Click/touch and drag to sign",
-                style: TextStyle(color: Colors.grey),
+            // The Drawing Area
+            GestureDetector(
+              onPanUpdate: (details) {
+                setState(() {
+                  RenderBox renderBox = context.findRenderObject() as RenderBox;
+                  points.add(renderBox.globalToLocal(details.globalPosition));
+                  widget.onSigned(true);
+                });
+              },
+              onPanEnd: (details) {
+                points.add(null); // End of line
+              },
+              child: CustomPaint(
+                painter: _SignaturePainter(points),
+                size: Size.infinite,
               ),
             ),
 
-          // Clear Button
-          Positioned(
-            bottom: 12,
-            right: 12,
-            child: ElevatedButton.icon(
-              onPressed: clear,
-              icon: const Icon(Icons.clear, size: 14),
-              label: const Text("Clear", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.red.shade700,
-                backgroundColor: Colors.white,
-                elevation: 4,
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            // Background Placeholder Text
+            if (points.isEmpty)
+              const Center(
+                child: Text(
+                  "Click/touch and drag to sign",
+                  style: TextStyle(color: Colors.grey),
+                ),
+              ),
+
+            // Clear Button
+            Positioned(
+              bottom: 12,
+              right: 12,
+              child: ElevatedButton.icon(
+                onPressed: clear,
+                icon: const Icon(Icons.clear, size: 14),
+                label: const Text(
+                  "Clear",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                ),
+                style: ElevatedButton.styleFrom(
+                  foregroundColor: Colors.red.shade700,
+                  backgroundColor: Colors.white,
+                  elevation: 4,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
               ),
             ),
-          )
           ],
         ),
       ),

@@ -10,7 +10,7 @@ class SectionFlightInfo extends StatelessWidget {
   final VoidCallback onPickDate;
   final VoidCallback onPickTime;
   final DateTime serviceDate;
-  
+
   // New Fields for Requester Info
   final TextEditingController requestedByCtl;
   final TextEditingController contactCtl;
@@ -61,8 +61,31 @@ class SectionFlightInfo extends StatelessWidget {
                     child: DropdownButtonFormField<String>(
                       initialValue: aircraftType,
                       decoration: _inputDecoration("Aircraft Type"),
-                      items: ["A319", "A320", "A321", "A330", "A340", "A350", "A380", "B737", "B747", "B767", "B777", "B787", "E190", "Q400"].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-                      onChanged: (v) { if (v != null) onAircraftChanged(v); },
+                      items:
+                          [
+                                "A319",
+                                "A320",
+                                "A321",
+                                "A330",
+                                "A340",
+                                "A350",
+                                "A380",
+                                "B737",
+                                "B747",
+                                "B767",
+                                "B777",
+                                "B787",
+                                "E190",
+                                "Q400",
+                              ]
+                              .map(
+                                (e) =>
+                                    DropdownMenuItem(value: e, child: Text(e)),
+                              )
+                              .toList(),
+                      onChanged: (v) {
+                        if (v != null) onAircraftChanged(v);
+                      },
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -77,7 +100,9 @@ class SectionFlightInfo extends StatelessWidget {
                       onTap: onPickTime,
                       child: InputDecorator(
                         decoration: _inputDecoration("Scheduled Time"),
-                        child: Text(timeCtl.text.isEmpty ? "--:--" : timeCtl.text),
+                        child: Text(
+                          timeCtl.text.isEmpty ? "--:--" : timeCtl.text,
+                        ),
                       ),
                     ),
                   ),
@@ -87,7 +112,9 @@ class SectionFlightInfo extends StatelessWidget {
                       onTap: onPickDate,
                       child: InputDecorator(
                         decoration: _inputDecoration("Service Date"),
-                        child: Text("${serviceDate.day}/${serviceDate.month}/${serviceDate.year}"),
+                        child: Text(
+                          "${serviceDate.day}/${serviceDate.month}/${serviceDate.year}",
+                        ),
                       ),
                     ),
                   ),
@@ -105,24 +132,50 @@ class SectionFlightInfo extends StatelessWidget {
           icon: Icons.person_outline,
           child: Column(
             children: [
-              _buildTextField(requestedByCtl, "Requested By *", "Your full name", readOnly: isReadOnlyMode),
+              _buildTextField(
+                requestedByCtl,
+                "Requested By *",
+                "Your full name",
+                readOnly: isReadOnlyMode,
+              ),
               const SizedBox(height: 12),
-              _buildTextField(contactCtl, "Contact Number *", "Extension or Mobile", readOnly: isReadOnlyMode),
+              _buildTextField(
+                contactCtl,
+                "Contact Number *",
+                "Extension or Mobile",
+                readOnly: isReadOnlyMode,
+              ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: department,
-                decoration: _inputDecoration("Department").copyWith(filled: isReadOnlyMode, fillColor: isReadOnlyMode ? Colors.grey.shade100 : null),
-                items: (["Ground Operations", "Maintenance", "Cargo"].contains(department) 
-                        ? ["Ground Operations", "Maintenance", "Cargo"] 
-                        : ["Ground Operations", "Maintenance", "Cargo", department])
-                    .map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                decoration: _inputDecoration("Department").copyWith(
+                  filled: isReadOnlyMode,
+                  fillColor: isReadOnlyMode ? Colors.grey.shade100 : null,
+                ),
+                items:
+                    ([
+                              "Ground Operations",
+                              "Maintenance",
+                              "Cargo",
+                            ].contains(department)
+                            ? ["Ground Operations", "Maintenance", "Cargo"]
+                            : [
+                                "Ground Operations",
+                                "Maintenance",
+                                "Cargo",
+                                department,
+                              ])
+                        .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                        .toList(),
                 onChanged: isReadOnlyMode ? null : onDepartmentChanged,
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
                 initialValue: priority,
                 decoration: _inputDecoration("Priority Level"),
-                items: ["Low", "Medium", "High", "Critical"].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                items: ["Low", "Medium", "High", "Critical"]
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
                 onChanged: onPriorityChanged,
               ),
             ],
@@ -132,7 +185,11 @@ class SectionFlightInfo extends StatelessWidget {
     );
   }
 
-  Widget _buildCard({required String title, required IconData icon, required Widget child}) {
+  Widget _buildCard({
+    required String title,
+    required IconData icon,
+    required Widget child,
+  }) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -146,7 +203,13 @@ class SectionFlightInfo extends StatelessWidget {
             children: [
               Icon(icon, size: 18, color: Colors.grey[600]),
               const SizedBox(width: 8),
-              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: 16),
@@ -156,7 +219,12 @@ class SectionFlightInfo extends StatelessWidget {
     );
   }
 
-  Widget _buildTextField(TextEditingController ctl, String label, String hint, {bool readOnly = false}) {
+  Widget _buildTextField(
+    TextEditingController ctl,
+    String label,
+    String hint, {
+    bool readOnly = false,
+  }) {
     return TextField(
       controller: ctl,
       readOnly: readOnly,
@@ -172,8 +240,14 @@ class SectionFlightInfo extends StatelessWidget {
     return InputDecoration(
       labelText: label,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: BorderSide(color: Colors.grey.shade300)),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(8),
+        borderSide: BorderSide(color: Colors.grey.shade300),
+      ),
     );
   }
 }

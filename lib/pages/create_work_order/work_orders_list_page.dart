@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 // Import your create page to navigate to it
-import 'create_work_order_page.dart'; 
+import 'create_work_order_page.dart';
 import '../dashboard.dart'; // Import UserInfo
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -86,7 +86,9 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
 
             // Firestore Data Stream + Table
             StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance.collection('workOrders').snapshots(),
+              stream: FirebaseFirestore.instance
+                  .collection('workOrders')
+                  .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Padding(
@@ -103,9 +105,10 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
                   if (data['createdAt'] is Timestamp) {
                     parsedDate = (data['createdAt'] as Timestamp).toDate();
                   } else if (data['createdAt'] is String) {
-                    parsedDate = DateTime.tryParse(data['createdAt']) ?? DateTime.now();
+                    parsedDate =
+                        DateTime.tryParse(data['createdAt']) ?? DateTime.now();
                   }
-                  
+
                   return WorkOrder(
                     id: data['id']?.toString() ?? doc.id,
                     title: data['title']?.toString() ?? 'Unknown',
@@ -120,14 +123,23 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
                 }).toList();
 
                 // Locally sort by created descending
-                allWorkOrders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+                allWorkOrders.sort(
+                  (a, b) => b.createdAt.compareTo(a.createdAt),
+                );
 
                 // Filter Logic
                 List<WorkOrder> filteredOrders = allWorkOrders.where((wo) {
-                  final matchesSearch = wo.title.toLowerCase().contains(_searchQuery.toLowerCase()) ||
+                  final matchesSearch =
+                      wo.title.toLowerCase().contains(
+                        _searchQuery.toLowerCase(),
+                      ) ||
                       wo.id.toLowerCase().contains(_searchQuery.toLowerCase());
-                  final matchesStatus = _selectedStatus == 'All Statuses' || wo.status == _selectedStatus;
-                  final matchesPriority = _selectedPriority == 'All Priorities' || wo.priority == _selectedPriority;
+                  final matchesStatus =
+                      _selectedStatus == 'All Statuses' ||
+                      wo.status == _selectedStatus;
+                  final matchesPriority =
+                      _selectedPriority == 'All Priorities' ||
+                      wo.priority == _selectedPriority;
                   return matchesSearch && matchesStatus && matchesPriority;
                 }).toList();
 
@@ -137,7 +149,10 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
                     // Count Indicator
                     Text(
                       "Work Orders (${filteredOrders.length})",
-                      style: TextStyle(color: Colors.grey[700], fontWeight: FontWeight.bold),
+                      style: TextStyle(
+                        color: Colors.grey[700],
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 10),
 
@@ -145,10 +160,11 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
                     LayoutBuilder(
                       builder: (context, constraints) {
                         const double minTableWidth = 1200.0;
-                        final double tableWidth = constraints.maxWidth > minTableWidth 
-                            ? constraints.maxWidth 
+                        final double tableWidth =
+                            constraints.maxWidth > minTableWidth
+                            ? constraints.maxWidth
                             : minTableWidth;
-                            
+
                         return SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: SizedBox(
@@ -163,22 +179,32 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
                                 // Data List
                                 if (filteredOrders.isEmpty)
                                   const Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 40.0),
+                                    padding: EdgeInsets.symmetric(
+                                      vertical: 40.0,
+                                    ),
                                     child: Center(
                                       child: Text(
                                         "No data is present",
-                                        style: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.w500),
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.grey,
+                                          fontWeight: FontWeight.w500,
+                                        ),
                                       ),
                                     ),
                                   )
                                 else
                                   ListView.separated(
                                     shrinkWrap: true,
-                                    physics: const NeverScrollableScrollPhysics(),
+                                    physics:
+                                        const NeverScrollableScrollPhysics(),
                                     itemCount: filteredOrders.length,
-                                    separatorBuilder: (context, index) => const Divider(height: 1),
+                                    separatorBuilder: (context, index) =>
+                                        const Divider(height: 1),
                                     itemBuilder: (context, index) {
-                                      return _buildWorkOrderRow(filteredOrders[index]);
+                                      return _buildWorkOrderRow(
+                                        filteredOrders[index],
+                                      );
                                     },
                                   ),
                               ],
@@ -207,7 +233,9 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
       runSpacing: 16,
       children: [
         ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width - 48),
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width - 48,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: const [
@@ -233,7 +261,9 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
             backgroundColor: const Color(0xFFB71C1C),
             foregroundColor: Colors.white,
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
           ),
           icon: const Icon(Icons.add, size: 18),
           label: const Text("Create New Work Order"),
@@ -284,23 +314,35 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
                   ),
                 ),
               ),
-              
+
               // Status Dropdown
               SizedBox(
                 width: 150,
                 child: _buildDropdown(
                   value: _selectedStatus,
-                  items: ['All Statuses', 'Open', 'In Progress', 'Completed', 'On Hold'],
+                  items: [
+                    'All Statuses',
+                    'Open',
+                    'In Progress',
+                    'Completed',
+                    'On Hold',
+                  ],
                   onChanged: (val) => setState(() => _selectedStatus = val!),
                 ),
               ),
-              
+
               // Priority Dropdown
               SizedBox(
                 width: 150,
                 child: _buildDropdown(
                   value: _selectedPriority,
-                  items: ['All Priorities', 'Critical', 'High', 'Medium', 'Low'],
+                  items: [
+                    'All Priorities',
+                    'Critical',
+                    'High',
+                    'Medium',
+                    'Low',
+                  ],
                   onChanged: (val) => setState(() => _selectedPriority = val!),
                 ),
               ),
@@ -311,7 +353,11 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
     );
   }
 
-  Widget _buildDropdown({required String value, required List<String> items, required ValueChanged<String?> onChanged}) {
+  Widget _buildDropdown({
+    required String value,
+    required List<String> items,
+    required ValueChanged<String?> onChanged,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       decoration: BoxDecoration(
@@ -323,7 +369,14 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
           value: value,
           isExpanded: true,
           icon: const Icon(Icons.keyboard_arrow_down, color: Colors.grey),
-          items: items.map((e) => DropdownMenuItem(value: e, child: Text(e, style: const TextStyle(fontSize: 14)))).toList(),
+          items: items
+              .map(
+                (e) => DropdownMenuItem(
+                  value: e,
+                  child: Text(e, style: const TextStyle(fontSize: 14)),
+                ),
+              )
+              .toList(),
           onChanged: onChanged,
         ),
       ),
@@ -335,14 +388,62 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
         children: const [
-          SizedBox(width: 100, child: Text("Work Order ID", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-          Expanded(flex: 2, child: Text("Title & Flight Number", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-          Expanded(flex: 1, child: Text("Priority", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-          Expanded(flex: 1, child: Text("Status", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-          Expanded(flex: 2, child: Text("Services", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-          Expanded(flex: 1, child: Text("Location", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-          Expanded(flex: 1, child: Text("Due Date", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
-          SizedBox(width: 80, child: Text("Action", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12))),
+          SizedBox(
+            width: 100,
+            child: Text(
+              "Work Order ID",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text(
+              "Title & Flight Number",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: Text(
+              "Priority",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: Text(
+              "Status",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text(
+              "Services",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: Text(
+              "Location",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            ),
+          ),
+          Expanded(
+            flex: 1,
+            child: Text(
+              "Due Date",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            ),
+          ),
+          SizedBox(
+            width: 80,
+            child: Text(
+              "Action",
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+            ),
+          ),
         ],
       ),
     );
@@ -355,29 +456,47 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // ID
-          SizedBox(width: 100, child: Text(wo.id, style: const TextStyle(fontWeight: FontWeight.w500))),
-          
+          SizedBox(
+            width: 100,
+            child: Text(
+              wo.id,
+              style: const TextStyle(fontWeight: FontWeight.w500),
+            ),
+          ),
+
           // Title
           Expanded(
             flex: 2,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(wo.title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                Text(
+                  wo.title,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
+                ),
                 const SizedBox(height: 2),
-                Text("Aircraft: ${wo.aircraft}", style: const TextStyle(color: Colors.blue, fontSize: 12)),
+                Text(
+                  "Aircraft: ${wo.aircraft}",
+                  style: const TextStyle(color: Colors.blue, fontSize: 12),
+                ),
                 const SizedBox(height: 2),
-                Text(wo.details, style: const TextStyle(color: Colors.grey, fontSize: 11)),
+                Text(
+                  wo.details,
+                  style: const TextStyle(color: Colors.grey, fontSize: 11),
+                ),
               ],
             ),
           ),
-          
+
           // Priority
           Expanded(
-            flex: 1, 
-            child: Text(wo.priority, style: const TextStyle(fontSize: 13))
+            flex: 1,
+            child: Text(wo.priority, style: const TextStyle(fontSize: 13)),
           ),
-          
+
           // Status
           Expanded(
             flex: 1,
@@ -389,29 +508,47 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
               ),
             ),
           ),
-          
+
           // Services (Blue Links)
           Expanded(
             flex: 2,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ...wo.services.take(2).map((s) => Padding(
-                      padding: const EdgeInsets.only(bottom: 2.0),
-                      child: Text(s, style: const TextStyle(color: Colors.blue, fontSize: 12, decoration: TextDecoration.underline)),
-                    )),
+                ...wo.services
+                    .take(2)
+                    .map(
+                      (s) => Padding(
+                        padding: const EdgeInsets.only(bottom: 2.0),
+                        child: Text(
+                          s,
+                          style: const TextStyle(
+                            color: Colors.blue,
+                            fontSize: 12,
+                            decoration: TextDecoration.underline,
+                          ),
+                        ),
+                      ),
+                    ),
                 if (wo.services.length > 2)
-                  const Text("+1 more", style: TextStyle(color: Colors.blue, fontSize: 12)),
+                  const Text(
+                    "+1 more",
+                    style: TextStyle(color: Colors.blue, fontSize: 12),
+                  ),
               ],
             ),
           ),
-          
+
           // Location
           Expanded(
             flex: 1,
             child: Row(
               children: [
-                const Icon(Icons.location_on_outlined, size: 14, color: Colors.grey),
+                const Icon(
+                  Icons.location_on_outlined,
+                  size: 14,
+                  color: Colors.grey,
+                ),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
@@ -423,19 +560,23 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
               ],
             ),
           ),
-          
+
           // Due Date
           Expanded(
             flex: 1,
             child: Row(
               children: [
-                const Icon(Icons.calendar_today_outlined, size: 14, color: Colors.grey),
+                const Icon(
+                  Icons.calendar_today_outlined,
+                  size: 14,
+                  color: Colors.grey,
+                ),
                 const SizedBox(width: 4),
                 Expanded(
                   child: Text(
-                    wo.dueDate != null 
-                      ? "${wo.dueDate!.day} - ${_getMonth(wo.dueDate!.month)} - ${wo.dueDate!.year}" 
-                      : "N/A",
+                    wo.dueDate != null
+                        ? "${wo.dueDate!.day} - ${_getMonth(wo.dueDate!.month)} - ${wo.dueDate!.year}"
+                        : "N/A",
                     style: const TextStyle(fontSize: 13),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -443,16 +584,24 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
               ],
             ),
           ),
-          
+
           // Actions
           SizedBox(
             width: 80,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.remove_red_eye_outlined, size: 18, color: Colors.yellow[700]), // Yellow Eye
+                Icon(
+                  Icons.remove_red_eye_outlined,
+                  size: 18,
+                  color: Colors.yellow[700],
+                ), // Yellow Eye
                 const SizedBox(width: 8),
-                const Icon(Icons.edit_outlined, size: 18, color: Colors.cyan), // Cyan/Blue Edit
+                const Icon(
+                  Icons.edit_outlined,
+                  size: 18,
+                  color: Colors.cyan,
+                ), // Cyan/Blue Edit
               ],
             ),
           ),
@@ -462,7 +611,20 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
   }
 
   String _getMonth(int month) {
-    const months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
+    const months = [
+      'JAN',
+      'FEB',
+      'MAR',
+      'APR',
+      'MAY',
+      'JUN',
+      'JUL',
+      'AUG',
+      'SEP',
+      'OCT',
+      'NOV',
+      'DEC',
+    ];
     return months[month - 1];
   }
 }

@@ -6,12 +6,10 @@ class LoginForm extends StatefulWidget {
     required String email,
     required String password,
     required bool rememberMe,
-  }) onLogin;
+  })
+  onLogin;
 
-  const LoginForm({
-    super.key,
-    required this.onLogin,
-  });
+  const LoginForm({super.key, required this.onLogin});
 
   @override
   State<LoginForm> createState() => _LoginFormState();
@@ -58,7 +56,11 @@ class _LoginFormState extends State<LoginForm> {
                       color: Colors.red,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.flight, color: Colors.white, size: 32),
+                    child: const Icon(
+                      Icons.flight,
+                      color: Colors.white,
+                      size: 32,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   const Text(
@@ -84,7 +86,10 @@ class _LoginFormState extends State<LoginForm> {
                 decoration: InputDecoration(
                   labelText: "Email Address",
                   hintText: "your.email@airport.com",
-                  prefixIcon: const Icon(Icons.person_outline, color: Colors.grey),
+                  prefixIcon: const Icon(
+                    Icons.person_outline,
+                    color: Colors.grey,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -94,8 +99,9 @@ class _LoginFormState extends State<LoginForm> {
                   ),
                 ),
                 keyboardType: TextInputType.emailAddress,
-                validator: (value) =>
-                    (value == null || value.isEmpty) ? 'Please enter your email' : null,
+                validator: (value) => (value == null || value.isEmpty)
+                    ? 'Please enter your email'
+                    : null,
                 onSaved: (value) => _email = value!,
               ),
               const SizedBox(height: 16),
@@ -105,7 +111,10 @@ class _LoginFormState extends State<LoginForm> {
                 decoration: InputDecoration(
                   labelText: "Password",
                   hintText: "Enter your password",
-                  prefixIcon: const Icon(Icons.shield_outlined, color: Colors.grey),
+                  prefixIcon: const Icon(
+                    Icons.shield_outlined,
+                    color: Colors.grey,
+                  ),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
@@ -115,8 +124,9 @@ class _LoginFormState extends State<LoginForm> {
                   ),
                 ),
                 obscureText: true,
-                validator: (value) =>
-                    (value == null || value.isEmpty) ? 'Please enter your password' : null,
+                validator: (value) => (value == null || value.isEmpty)
+                    ? 'Please enter your password'
+                    : null,
                 onSaved: (value) => _password = value!,
               ),
               const SizedBox(height: 12),
@@ -168,7 +178,9 @@ class _LoginFormState extends State<LoginForm> {
                     onTap: () {
                       Navigator.push(
                         context,
-                        MaterialPageRoute(builder: (context) => const ForgotPasswordPage()),
+                        MaterialPageRoute(
+                          builder: (context) => const ForgotPasswordPage(),
+                        ),
                       );
                     },
                     child: const Text(

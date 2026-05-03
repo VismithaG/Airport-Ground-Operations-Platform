@@ -34,7 +34,12 @@ class CreateWorkOrderPage extends StatefulWidget {
   final ValueChanged<WorkOrder> onSave;
   final UserInfo? currentUser;
 
-  const CreateWorkOrderPage({super.key, required this.onBack, required this.onSave, this.currentUser});
+  const CreateWorkOrderPage({
+    super.key,
+    required this.onBack,
+    required this.onSave,
+    this.currentUser,
+  });
 
   @override
   State<CreateWorkOrderPage> createState() => _CreateWorkOrderPageState();
@@ -44,7 +49,7 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
   int _currentStep = 1;
   bool _isSubmitted = false;
   bool _isSubmitting = false;
-  
+
   // --- Form State ---
   // Flight Info
   final _carrierCtl = TextEditingController();
@@ -70,7 +75,8 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
   final Map<String, int> _quantities = {};
   final TextEditingController _specialInstructionsCtl = TextEditingController();
 
-  final String _workOrderId = "ASD-${Random().nextInt(99999).toString().padLeft(5, '0')}";
+  final String _workOrderId =
+      "ASD-${Random().nextInt(99999).toString().padLeft(5, '0')}";
 
   @override
   void initState() {
@@ -92,16 +98,25 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
     final double maxCardHeight = MediaQuery.of(context).size.height * 0.9;
 
     return Scaffold(
-      backgroundColor: Colors.black.withAlpha((0.05 * 255).round()), // Light grey background like Figma
+      backgroundColor: Colors.black.withAlpha(
+        (0.05 * 255).round(),
+      ), // Light grey background like Figma
       body: Center(
         child: Container(
-          constraints: BoxConstraints(maxWidth: 600, maxHeight: maxCardHeight), // Constrain width/height for "Page" look
+          constraints: BoxConstraints(
+            maxWidth: 600,
+            maxHeight: maxCardHeight,
+          ), // Constrain width/height for "Page" look
           margin: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
-              BoxShadow(color: Colors.black.withAlpha((0.1 * 255).round()), blurRadius: 10, offset: const Offset(0, 4)),
+              BoxShadow(
+                color: Colors.black.withAlpha((0.1 * 255).round()),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
             ],
           ),
           child: Column(
@@ -129,7 +144,7 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
   Widget _buildHeader() {
     return Padding(
       padding: const EdgeInsets.all(20),
-            child: Row(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
@@ -145,19 +160,38 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text("New Work Order\nRequest", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, height: 1.1)),
+                const Text(
+                  "New Work Order\nRequest",
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    height: 1.1,
+                  ),
+                ),
                 const SizedBox(height: 4),
-                Text("Airport Service Department - Ground Operations", style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+                Text(
+                  "Airport Service Department - Ground Operations",
+                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+                ),
               ],
             ),
           ),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text("Work Order # $_workOrderId", style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-              Text("${_serviceDate.day}-${_getMonth(_serviceDate.month)}-${_serviceDate.year}", style: const TextStyle(fontSize: 12, color: Colors.grey)),
+              Text(
+                "Work Order # $_workOrderId",
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              Text(
+                "${_serviceDate.day}-${_getMonth(_serviceDate.month)}-${_serviceDate.year}",
+                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -193,13 +227,22 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
             shape: BoxShape.circle,
           ),
           alignment: Alignment.center,
-          child: Text(step.toString(), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold)),
+          child: Text(
+            step.toString(),
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
         const SizedBox(width: 8),
         Text(
           label,
           style: TextStyle(
-            color: isActive ? (isCurrent ? Colors.black87 : Colors.black54) : Colors.grey,
+            color: isActive
+                ? (isCurrent ? Colors.black87 : Colors.black54)
+                : Colors.grey,
             fontWeight: isCurrent ? FontWeight.bold : FontWeight.normal,
             fontSize: 13,
           ),
@@ -213,7 +256,9 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
       child: Container(
         height: 2,
         margin: const EdgeInsets.symmetric(horizontal: 12),
-        color: _currentStep > stepAfter ? const Color(0xFFB71C1C) : Colors.grey[300],
+        color: _currentStep > stepAfter
+            ? const Color(0xFFB71C1C)
+            : Colors.grey[300],
       ),
     );
   }
@@ -230,7 +275,12 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
           aircraftType: _aircraftType,
           onAircraftChanged: (v) => setState(() => _aircraftType = v),
           onPickDate: () async {
-            final d = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime.now(), lastDate: DateTime(2030));
+            final d = await showDatePicker(
+              context: context,
+              initialDate: DateTime.now(),
+              firstDate: DateTime.now(),
+              lastDate: DateTime(2030),
+            );
             if (d != null) setState(() => _serviceDate = d);
           },
           onPickTime: () async {
@@ -263,14 +313,16 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
           onToggle: (cat, service, val) {
             setState(() {
               if (val) {
-                if (!_selectedServices[cat]!.contains(service)) _selectedServices[cat]!.add(service);
+                if (!_selectedServices[cat]!.contains(service))
+                  _selectedServices[cat]!.add(service);
               } else {
                 _selectedServices[cat]!.remove(service);
                 _quantities.remove(service);
               }
             });
           },
-          onQuantityChanged: (service, val) => setState(() => _quantities[service] = val),
+          onQuantityChanged: (service, val) =>
+              setState(() => _quantities[service] = val),
         );
       case 3:
         return SectionReview(
@@ -294,83 +346,114 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           if (_currentStep == 1)
-            TextButton(onPressed: widget.onBack, child: const Text("Cancel", style: TextStyle(color: Colors.grey)))
+            TextButton(
+              onPressed: widget.onBack,
+              child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+            )
           else
             OutlinedButton(
               onPressed: () => setState(() => _currentStep--),
               style: OutlinedButton.styleFrom(foregroundColor: Colors.black87),
               child: const Text("Back"),
             ),
-          
+
           ElevatedButton(
-            onPressed: _isSubmitting ? null : () async {
-              if (_currentStep < 3) {
-                setState(() => _currentStep++);
-              } else {
-                setState(() => _isSubmitting = true);
-                
-                try {
-                  // Force refresh the auth token so new claims (like 'authorized') are respected instantly
-                  await FirebaseAuth.instance.currentUser?.getIdToken(true);
+            onPressed: _isSubmitting
+                ? null
+                : () async {
+                    if (_currentStep < 3) {
+                      setState(() => _currentStep++);
+                    } else {
+                      setState(() => _isSubmitting = true);
 
-                  // Save to Firestore First
-                  await FirebaseFirestore.instance.collection('workOrders').doc(_workOrderId).set({
-                    'id': _workOrderId,
-                    'title': "${_carrierCtl.text} ${_flightNoCtl.text}",
-                    'aircraft': _aircraftType,
-                    'status': "Open", // Defaulting to Open instead of Submitted as per usual logic
-                    'priority': _priority,
-                    'createdAt': FieldValue.serverTimestamp(),
-                    'services': _selectedServices.values.expand((e) => e).toList(),
-                    'location': _gateCtl.text.isEmpty ? 'TBD' : _gateCtl.text,
-                    'details': _specialInstructionsCtl.text.isEmpty ? 'Service Request' : _specialInstructionsCtl.text,
-                    'department': _department,
-                  });
+                      try {
+                        // Force refresh the auth token so new claims (like 'authorized') are respected instantly
+                        await FirebaseAuth.instance.currentUser?.getIdToken(
+                          true,
+                        );
 
-                  ActivityLogger.logEvent(
-                    action: 'Work Order Created',
-                    user: widget.currentUser?.name ?? _requestedByCtl.text,
-                    details: 'Created Work Order #$_workOrderId for ${_carrierCtl.text} ${_flightNoCtl.text}',
-                    severity: 'Info',
-                  );
+                        // Save to Firestore First
+                        await FirebaseFirestore.instance
+                            .collection('workOrders')
+                            .doc(_workOrderId)
+                            .set({
+                              'id': _workOrderId,
+                              'title':
+                                  "${_carrierCtl.text} ${_flightNoCtl.text}",
+                              'aircraft': _aircraftType,
+                              'status':
+                                  "Open", // Defaulting to Open instead of Submitted as per usual logic
+                              'priority': _priority,
+                              'createdAt': FieldValue.serverTimestamp(),
+                              'services': _selectedServices.values
+                                  .expand((e) => e)
+                                  .toList(),
+                              'location': _gateCtl.text.isEmpty
+                                  ? 'TBD'
+                                  : _gateCtl.text,
+                              'details': _specialInstructionsCtl.text.isEmpty
+                                  ? 'Service Request'
+                                  : _specialInstructionsCtl.text,
+                              'department': _department,
+                            });
 
-                  if (mounted) {
-                    setState(() {
-                      _isSubmitting = false;
-                      _isSubmitted = true;
-                    });
-                    widget.onSave(WorkOrder(
-                      id: _workOrderId,
-                      title: "${_carrierCtl.text} ${_flightNoCtl.text}",
-                      aircraft: _aircraftType,
-                      status: "Open",
-                      priority: _priority,
-                      createdAt: DateTime.now(),
-                      services: _selectedServices.values.expand((e) => e).toList(),
-                    ));
-                  }
-                } catch (e) {
-                  debugPrint('Submission error: $e');
-                  if (mounted) {
-                    setState(() => _isSubmitting = false);
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Failed to submit: $e'),
-                        backgroundColor: Colors.red,
-                      ),
-                    );
-                  }
-                }
-              }
-            },
+                        ActivityLogger.logEvent(
+                          action: 'Work Order Created',
+                          user:
+                              widget.currentUser?.name ?? _requestedByCtl.text,
+                          details:
+                              'Created Work Order #$_workOrderId for ${_carrierCtl.text} ${_flightNoCtl.text}',
+                          severity: 'Info',
+                        );
+
+                        if (mounted) {
+                          setState(() {
+                            _isSubmitting = false;
+                            _isSubmitted = true;
+                          });
+                          widget.onSave(
+                            WorkOrder(
+                              id: _workOrderId,
+                              title: "${_carrierCtl.text} ${_flightNoCtl.text}",
+                              aircraft: _aircraftType,
+                              status: "Open",
+                              priority: _priority,
+                              createdAt: DateTime.now(),
+                              services: _selectedServices.values
+                                  .expand((e) => e)
+                                  .toList(),
+                            ),
+                          );
+                        }
+                      } catch (e) {
+                        debugPrint('Submission error: $e');
+                        if (mounted) {
+                          setState(() => _isSubmitting = false);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('Failed to submit: $e'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      }
+                    }
+                  },
             style: ElevatedButton.styleFrom(
               backgroundColor: const Color(0xFFB71C1C),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
             ),
-            child: _isSubmitting 
-              ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-              : Text(_currentStep == 3 ? "Submit Work Order" : "Continue"),
+            child: _isSubmitting
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                : Text(_currentStep == 3 ? "Submit Work Order" : "Continue"),
           ),
         ],
       ),
@@ -389,9 +472,21 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
             children: [
               const Icon(Icons.check_circle, color: Colors.green, size: 80),
               const SizedBox(height: 24),
-              const Text("Work Order Submitted\nSuccessfully", textAlign: TextAlign.center, style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.green)),
+              const Text(
+                "Work Order Submitted\nSuccessfully",
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green,
+                ),
+              ),
               const SizedBox(height: 16),
-              const Text("Your request has been received and will be processed by the appropriate service teams.", textAlign: TextAlign.center, style: TextStyle(color: Colors.grey)),
+              const Text(
+                "Your request has been received and will be processed by the appropriate service teams.",
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.grey),
+              ),
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
@@ -406,12 +501,19 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
                       // ... clear others
                     });
                   },
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB71C1C), foregroundColor: Colors.white, padding: const EdgeInsets.all(16)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFB71C1C),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.all(16),
+                  ),
                   child: const Text("Create Another Work Order"),
                 ),
               ),
               const SizedBox(height: 16),
-              OutlinedButton(onPressed: widget.onBack, child: const Text("Back to Dashboard"))
+              OutlinedButton(
+                onPressed: widget.onBack,
+                child: const Text("Back to Dashboard"),
+              ),
             ],
           ),
         ),
@@ -419,5 +521,18 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
     );
   }
 
-  String _getMonth(int m) => ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][m-1];
+  String _getMonth(int m) => [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ][m - 1];
 }
