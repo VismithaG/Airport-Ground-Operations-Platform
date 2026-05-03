@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import '../firebase_options.dart';
+import '../services/activity_logger.dart';
 
 class CreateAccountPage extends StatefulWidget {
   const CreateAccountPage({super.key});
@@ -130,6 +131,14 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
           'status': 'Active',
           'lastLogin': '', 
         });
+
+        // Log the activity
+        ActivityLogger.logEvent(
+          action: 'Account Created',
+          user: 'Administrator', // Since only admin can reach here
+          details: 'Created new ${_selectedUserType} account for ${_workEmailCtrl.text.trim()}',
+          severity: 'Info',
+        );
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(

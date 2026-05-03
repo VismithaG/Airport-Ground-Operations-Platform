@@ -23,6 +23,7 @@ class UserData {
 }
 
 class ActivityLogData {
+  final String id;
   final String action;
   final String user;
   final String details;
@@ -30,7 +31,7 @@ class ActivityLogData {
   final String time;
   final IconData icon;
 
-  ActivityLogData(this.action, this.user, this.details, this.severity, this.time, this.icon);
+  ActivityLogData(this.id, this.action, this.user, this.details, this.severity, this.time, this.icon);
 }
 
 class AdminPanelPage extends StatefulWidget {
@@ -50,13 +51,11 @@ class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStat
   List<UserData> _users = [];
   List<UserData> _displayedUsers = [];
 
-  final List<ActivityLogData> _logs = List.generate(
-    16,
-    (i) => ActivityLogData('Action $i', 'User ${i % 10}', 'Details for action $i', i % 3 == 0 ? 'High' : (i % 3 == 1 ? 'Warning' : 'Info'), '2026-02-1${i + 1} 10:0$i', Icons.info_outline),
-  );
+  StreamSubscription? _logsSub;
+  List<ActivityLogData> _logs = [];
 
   // UI state
-  late List<ActivityLogData> _displayedLogs;
+  List<ActivityLogData> _displayedLogs = [];
   final TextEditingController _userSearchController = TextEditingController();
   final TextEditingController _logSearchController = TextEditingController();
   String _userFilterStatus = 'All';
@@ -112,7 +111,6 @@ class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStat
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _displayedLogs = List.from(_logs);
 
     _usersSub = FirebaseFirestore.instance.collection('users').snapshots().listen((snap) {
       if (!mounted) return;
@@ -132,11 +130,39 @@ class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStat
         _filterUsers();
       });
     });
+
+    _logsSub = FirebaseFirestore.instance.collection('activityLogs').orderBy('timestamp', descending: true).snapshots().listen((snap) {
+      if (!mounted) return;
+      setState(() {
+        _logs = snap.docs.map((doc) {
+          final data = doc.data();
+          final ts = data['timestamp'] as Timestamp?;
+          final timeStr = ts != null ? '${ts.toDate().year}-${ts.toDate().month.toString().padLeft(2, '0')}-${ts.toDate().day.toString().padLeft(2, '0')} ${ts.toDate().hour.toString().padLeft(2, '0')}:${ts.toDate().minute.toString().padLeft(2, '0')}' : '';
+          
+          IconData icon = Icons.info_outline;
+          final severity = data['severity'] ?? 'Info';
+          if (severity == 'High') icon = Icons.error;
+          if (severity == 'Warning') icon = Icons.warning_amber;
+
+          return ActivityLogData(
+            doc.id,
+            data['action'] ?? 'Unknown Action',
+            data['user'] ?? 'Unknown User',
+            data['details'] ?? '',
+            severity,
+            timeStr,
+            icon,
+          );
+        }).toList();
+        _filterLogs();
+      });
+    });
   }
 
   @override
   void dispose() {
     _usersSub?.cancel();
+    _logsSub?.cancel();
     _tabController.dispose();
     _userSearchController.dispose();
     _logSearchController.dispose();

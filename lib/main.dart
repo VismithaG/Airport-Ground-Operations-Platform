@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide UserInfo;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
+import 'services/activity_logger.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized(); // Prepares Flutter for async start
@@ -63,6 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
         password: password,
       );
     } on FirebaseAuthException catch (e) {
+      ActivityLogger.logEvent(action: 'Failed Login', user: cleanEmail, details: e.message ?? 'Unknown error', severity: 'Warning');
       if (mounted) {
         String msg = e.message ?? 'Unknown error';
         if (e.code == 'user-not-found' || e.code == 'invalid-credential' || e.code == 'wrong-password') {
@@ -111,6 +113,8 @@ class _LoginScreenState extends State<LoginScreen> {
       designation: designationName,
       department: departmentName,
     );
+
+    ActivityLogger.logEvent(action: 'Successful Login', user: user.email, details: 'User logged in to portal.', severity: 'Info');
 
     if (!mounted) return;
 

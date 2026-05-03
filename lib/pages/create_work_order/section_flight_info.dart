@@ -112,7 +112,10 @@ class SectionFlightInfo extends StatelessWidget {
               DropdownButtonFormField<String>(
                 initialValue: department,
                 decoration: _inputDecoration("Department").copyWith(filled: isReadOnlyMode, fillColor: isReadOnlyMode ? Colors.grey.shade100 : null),
-                items: ["Ground Operations", "Maintenance", "Cargo"].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                items: (["Ground Operations", "Maintenance", "Cargo"].contains(department) 
+                        ? ["Ground Operations", "Maintenance", "Cargo"] 
+                        : ["Ground Operations", "Maintenance", "Cargo", department])
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                 onChanged: isReadOnlyMode ? null : onDepartmentChanged,
               ),
               const SizedBox(height: 12),

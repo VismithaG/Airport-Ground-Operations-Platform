@@ -6,6 +6,7 @@ import 'section_review.dart'; // We will create this file below
 import '../dashboard.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide UserInfo;
+import '../../services/activity_logger.dart';
 
 // --- Work Order Model ---
 class WorkOrder {
@@ -325,6 +326,13 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
                     'details': _specialInstructionsCtl.text.isEmpty ? 'Service Request' : _specialInstructionsCtl.text,
                     'department': _department,
                   });
+
+                  ActivityLogger.logEvent(
+                    action: 'Work Order Created',
+                    user: widget.currentUser?.name ?? _requestedByCtl.text,
+                    details: 'Created Work Order #$_workOrderId for ${_carrierCtl.text} ${_flightNoCtl.text}',
+                    severity: 'Info',
+                  );
 
                   if (mounted) {
                     setState(() {
