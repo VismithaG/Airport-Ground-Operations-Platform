@@ -17,6 +17,7 @@ class DashboardHeader extends StatelessWidget implements PreferredSizeWidget {
           "name": "John Smith",
           "email": "john.smith@airport.com",
           "role": "Service Technician",
+          "designation": "Service Technician",
         };
 
     // Calculate initials
@@ -98,7 +99,7 @@ class DashboardHeader extends StatelessWidget implements PreferredSizeWidget {
                                 children: [
                                   Text(user['email'] ?? ''),
                                   const SizedBox(height: 8),
-                                  Text(user['role'] ?? ''),
+                                  Text(user['designation']?.isNotEmpty == true ? user['designation']! : (user['role'] ?? '')),
                                 ],
                               ),
                               actions: [
@@ -145,7 +146,7 @@ class DashboardHeader extends StatelessWidget implements PreferredSizeWidget {
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Text(user['name'] ?? 'User', style: const TextStyle(fontSize: 14, color: Colors.black87)),
-                                  Text(user['role'] ?? '', style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                  Text(user['designation']?.isNotEmpty == true ? user['designation']! : (user['role'] ?? ''), style: const TextStyle(fontSize: 11, color: Colors.grey)),
                                 ],
                               ),
                             ),

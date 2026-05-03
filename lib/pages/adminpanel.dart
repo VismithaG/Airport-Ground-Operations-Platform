@@ -290,7 +290,7 @@ class _AdminPanelPageState extends State<AdminPanelPage> with TickerProviderStat
                           const SizedBox(height: 6),
                           Text(widget.currentUser?['email'] ?? '', style: const TextStyle(color: Colors.grey)),
                           const SizedBox(height: 6),
-                          Text(widget.currentUser?['role'] ?? '', style: const TextStyle(color: Colors.grey)),
+                          Text(widget.currentUser?['designation']?.isNotEmpty == true ? widget.currentUser!['designation']! : (widget.currentUser?['role'] ?? ''), style: const TextStyle(color: Colors.grey)),
                         ],
                       ),
                       actions: [

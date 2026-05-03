@@ -80,6 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     String displayName = "System User";
     String roleName = "Service Technician";
+    String designationName = "";
 
     try {
       final userRecord = FirebaseAuth.instance.currentUser;
@@ -89,6 +90,7 @@ class _LoginScreenState extends State<LoginScreen> {
           final data = userDoc.data()!;
           displayName = data['fullName'] ?? displayName;
           roleName = data['userType'] ?? roleName;
+          designationName = data['designation'] ?? designationName;
           
           // Map "Admin" from firestore explicitly to Administrator due to routing logic below
           if (roleName.toLowerCase() == 'admin' || roleName.toLowerCase() == 'administrator') {
@@ -104,6 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
       name: displayName,
       role: roleName,
       email: cleanEmail,
+      designation: designationName,
     );
 
     if (!mounted) return;
@@ -114,7 +117,7 @@ class _LoginScreenState extends State<LoginScreen> {
         context,
         MaterialPageRoute(
           builder: (_) => AdminPanelPage(
-            currentUser: {"name": user.name, "role": user.role, "email": user.email},
+            currentUser: {"name": user.name, "role": user.role, "email": user.email, "designation": user.designation},
             onLogout: (ctx) {
               debugPrint('Main: admin onLogout called - navigating to LoginScreen');
               Navigator.pushReplacement(ctx, MaterialPageRoute(builder: (_) => const LoginScreen()));
@@ -139,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _demoApproval() {
-    final user = UserInfo(name: "Approval Demo", role: "Supervisor", email: "supervisor@demo");
+    final user = UserInfo(name: "Approval Demo", role: "Supervisor", email: "supervisor@demo", designation: "Demo Supervisor");
     // Demo approval remains dashboard
     Navigator.pushReplacement(
       context,
@@ -156,13 +159,13 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _demoAdminLogin() {
-    final user = UserInfo(name: "Admin Demo", role: "Administrator", email: "admin@demo");
+    final user = UserInfo(name: "Admin Demo", role: "Administrator", email: "admin@demo", designation: "Demo Admin");
     // Demo admin should open Admin Panel
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (_) => AdminPanelPage(
-          currentUser: {"name": user.name, "role": user.role, "email": user.email},
+          currentUser: {"name": user.name, "role": user.role, "email": user.email, "designation": user.designation},
           onLogout: (ctx) {
             debugPrint('Main: admin onLogout called - navigating to LoginScreen');
             Navigator.pushReplacement(ctx, MaterialPageRoute(builder: (_) => const LoginScreen()));

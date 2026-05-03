@@ -11,7 +11,8 @@ class UserInfo {
   final String name;
   final String role;
   final String email;
-  UserInfo({required this.name, required this.role, required this.email});
+  final String designation;
+  UserInfo({required this.name, required this.role, required this.email, this.designation = ''});
 }
 
 class WorkOrder {
@@ -59,7 +60,8 @@ class _DashboardPageState extends State<DashboardPage> {
             ? {
                 "name": widget.currentUser!.name,
                 "role": widget.currentUser!.role,
-                "email": widget.currentUser!.email
+                "email": widget.currentUser!.email,
+                "designation": widget.currentUser!.designation
               }
             : null,
       ),
