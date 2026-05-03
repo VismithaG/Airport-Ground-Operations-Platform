@@ -10,7 +10,8 @@ class SectionFlightInfo extends StatelessWidget {
   final VoidCallback onPickDate;
   final VoidCallback onPickTime;
   final DateTime serviceDate;
-
+  final ValueChanged<TimeOfDay>? onTimePicked;
+  
   // New Fields for Requester Info
   final TextEditingController requestedByCtl;
   final TextEditingController contactCtl;
@@ -31,6 +32,7 @@ class SectionFlightInfo extends StatelessWidget {
     required this.onPickDate,
     required this.onPickTime,
     required this.serviceDate,
+    this.onTimePicked,
     required this.requestedByCtl,
     required this.contactCtl,
     required this.department,
@@ -96,15 +98,7 @@ class SectionFlightInfo extends StatelessWidget {
               Row(
                 children: [
                   Expanded(
-                    child: InkWell(
-                      onTap: onPickTime,
-                      child: InputDecorator(
-                        decoration: _inputDecoration("Scheduled Time"),
-                        child: Text(
-                          timeCtl.text.isEmpty ? "--:--" : timeCtl.text,
-                        ),
-                      ),
-                    ),
+                    child: _buildTimePicker(context),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -228,10 +222,66 @@ class SectionFlightInfo extends StatelessWidget {
     return TextField(
       controller: ctl,
       readOnly: readOnly,
+      style: readOnly
+          ? const TextStyle(fontWeight: FontWeight.w300, color: Colors.black87)
+          : const TextStyle(fontWeight: FontWeight.w400),
       decoration: _inputDecoration(label).copyWith(
         hintText: hint,
+        hintStyle: const TextStyle(fontWeight: FontWeight.w300, color: Colors.grey),
         filled: readOnly,
         fillColor: readOnly ? Colors.grey.shade100 : null,
+      ),
+    );
+  }
+
+  Widget _buildTimePicker(BuildContext context) {
+    return InkWell(
+      onTap: () async {
+        final TimeOfDay? picked = await showTimePicker(
+          context: context,
+          initialTime: TimeOfDay.now(),
+          builder: (context, child) {
+            return Theme(
+              data: Theme.of(context).copyWith(
+                colorScheme: ColorScheme.light(
+                  primary: const Color(0xFFB71C1C),
+                  onPrimary: Colors.white,
+                  surface: Colors.white,
+                  onSurface: Colors.black87,
+                ),
+                timePickerTheme: TimePickerThemeData(
+                  backgroundColor: Colors.white,
+                  hourMinuteShape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  dayPeriodShape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+              ),
+              child: child!,
+            );
+          },
+        );
+        if (picked != null) {
+          final hour = picked.hourOfPeriod == 0 ? 12 : picked.hourOfPeriod;
+          final minute = picked.minute.toString().padLeft(2, '0');
+          final period = picked.period == DayPeriod.am ? 'AM' : 'PM';
+          timeCtl.text = '$hour:$minute $period';
+          if (onTimePicked != null) onTimePicked!(picked);
+        }
+      },
+      child: InputDecorator(
+        decoration: _inputDecoration("Scheduled Time").copyWith(
+          suffixIcon: const Icon(Icons.access_time, color: Color(0xFFB71C1C)),
+        ),
+        child: Text(
+          timeCtl.text.isEmpty ? '--:--' : timeCtl.text,
+          style: TextStyle(
+            color: timeCtl.text.isEmpty ? Colors.grey : Colors.black87,
+            fontWeight: FontWeight.w400,
+          ),
+        ),
       ),
     );
   }

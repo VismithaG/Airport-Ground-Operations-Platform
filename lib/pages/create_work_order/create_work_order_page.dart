@@ -304,6 +304,7 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
           onDepartmentChanged: (v) => setState(() => _department = v!),
           priority: _priority,
           onPriorityChanged: (v) => setState(() => _priority = v!),
+          onTimePicked: (_) => setState(() {}),
         );
       case 2:
         return SectionServices(
