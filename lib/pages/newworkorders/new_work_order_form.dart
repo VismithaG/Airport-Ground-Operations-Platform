@@ -5,7 +5,8 @@ import 'section_services.dart';
 import 'section_review.dart';
 import 'dart:math';
 
-import '../newworkorders/new_work_order_page.dart' as model; // for WorkOrder type reference if you want
+import '../newworkorders/new_work_order_page.dart'
+    as model; // for WorkOrder type reference if you want
 
 class NewWorkOrderForm extends StatefulWidget {
   final ValueChanged<model.WorkOrder> onSubmit;
@@ -63,12 +64,15 @@ class _NewWorkOrderFormState extends State<NewWorkOrderForm> {
 
   String _generateWorkOrderNumber() {
     final prefix = 'ASD';
-    final timestamp = DateTime.now().millisecondsSinceEpoch.toString().substring(9); // last digits
+    final timestamp = DateTime.now().millisecondsSinceEpoch
+        .toString()
+        .substring(9); // last digits
     final rand = Random().nextInt(99).toString().padLeft(2, '0');
     return '$prefix-$timestamp-$rand';
   }
 
-  int _getTotalSelectedServices() => _selected.values.fold(0, (p, e) => p + e.length);
+  int _getTotalSelectedServices() =>
+      _selected.values.fold(0, (p, e) => p + e.length);
 
   void _toggleService(String cat, String service, bool checked) {
     setState(() {
@@ -93,7 +97,12 @@ class _NewWorkOrderFormState extends State<NewWorkOrderForm> {
 
   Future<void> _pickDate() async {
     final now = DateTime.now();
-    final picked = await showDatePicker(context: context, initialDate: now, firstDate: now.subtract(const Duration(days: 365)), lastDate: now.add(const Duration(days: 365)));
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: now,
+      firstDate: now.subtract(const Duration(days: 365)),
+      lastDate: now.add(const Duration(days: 365)),
+    );
     if (picked != null) setState(() => _selectedDate = picked);
   }
 
@@ -119,7 +128,9 @@ class _NewWorkOrderFormState extends State<NewWorkOrderForm> {
 
   Future<void> _submit() async {
     setState(() => _isSubmitting = true);
-    await Future.delayed(const Duration(seconds: 1, milliseconds: 500)); // simulate network
+    await Future.delayed(
+      const Duration(seconds: 1, milliseconds: 500),
+    ); // simulate network
 
     final services = _selected.values.expand((e) => e).toList();
 
@@ -159,21 +170,48 @@ class _NewWorkOrderFormState extends State<NewWorkOrderForm> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(children: [
-              const Icon(Icons.file_copy, size: 28, color: Color(0xFF7F1D1D)),
-              const SizedBox(width: 12),
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Text('New Work Order Request', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF7F1D1D))),
-                const SizedBox(height: 2),
-                const Text('Airport Service Department - Ground Operations', style: TextStyle(color: Colors.grey)),
-              ]),
-            ]),
-              Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-              const Text('Work Order #', style: TextStyle(color: Colors.grey)),
-              Text(workOrderNumber, style: const TextStyle(fontFamily: 'monospace', fontSize: 14)),
-              const SizedBox(height: 4),
-              Text(_selectedDate.toLocal().toString().split(' ')[0], style: const TextStyle(color: Colors.grey)),
-            ]),
+            Row(
+              children: [
+                const Icon(Icons.file_copy, size: 28, color: Color(0xFF7F1D1D)),
+                const SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'New Work Order Request',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF7F1D1D),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    const Text(
+                      'Airport Service Department - Ground Operations',
+                      style: TextStyle(color: Colors.grey),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                const Text(
+                  'Work Order #',
+                  style: TextStyle(color: Colors.grey),
+                ),
+                Text(
+                  workOrderNumber,
+                  style: const TextStyle(fontFamily: 'monospace', fontSize: 14),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  _selectedDate.toLocal().toString().split(' ')[0],
+                  style: const TextStyle(color: Colors.grey),
+                ),
+              ],
+            ),
           ],
         ),
         const SizedBox(height: 12),
@@ -182,18 +220,27 @@ class _NewWorkOrderFormState extends State<NewWorkOrderForm> {
         Card(
           child: Padding(
             padding: const EdgeInsets.all(12),
-            child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Row(
-                children: [
-                  _stepCircle(1, 'Flight', _formStep >= 1),
-                  _line(_formStep >= 2),
-                  _stepCircle(2, 'Services', _formStep >= 2),
-                  _line(_formStep >= 3),
-                  _stepCircle(3, 'Review', _formStep >= 3),
-                ],
-              ),
-              Row(children: [const Icon(Icons.info_outline, color: Colors.orange), const SizedBox(width: 6), Text('${_getTotalSelectedServices()} services selected')]),
-            ]),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    _stepCircle(1, 'Flight', _formStep >= 1),
+                    _line(_formStep >= 2),
+                    _stepCircle(2, 'Services', _formStep >= 2),
+                    _line(_formStep >= 3),
+                    _stepCircle(3, 'Review', _formStep >= 3),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const Icon(Icons.info_outline, color: Colors.orange),
+                    const SizedBox(width: 6),
+                    Text('${_getTotalSelectedServices()} services selected'),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 12),
@@ -226,7 +273,8 @@ class _NewWorkOrderFormState extends State<NewWorkOrderForm> {
             onToggle: _toggleService,
             onQuantityChanged: _setQuantity,
             onNoteChanged: _setNote,
-            onSpecialInstructionsChanged: (v) => setState(() => _specialInstructions = v),
+            onSpecialInstructionsChanged: (v) =>
+                setState(() => _specialInstructions = v),
             specialInstructions: _specialInstructions,
           )
         else
@@ -250,50 +298,108 @@ class _NewWorkOrderFormState extends State<NewWorkOrderForm> {
         const SizedBox(height: 12),
 
         // Navigator buttons
-        Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-          if (_formStep > 1)
-            OutlinedButton(onPressed: () => setState(() => _formStep--), child: const Text('Back'))
-          else
-            TextButton(onPressed: widget.onCancel, child: const Text('Cancel')),
-          Row(children: [
-            if (_formStep < 3)
-              ElevatedButton(
-                onPressed: (_formStep == 1 && (_carrierCtl.text.isEmpty || _flightNoCtl.text.isEmpty || _requestedByCtl.text.isEmpty || _contactNumberCtl.text.isEmpty))
-                    ? null
-                    : () => setState(() => _formStep++),
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade600),
-                child: Text(_formStep == 1 ? 'Continue to Services' : 'Review Request'),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            if (_formStep > 1)
+              OutlinedButton(
+                onPressed: () => setState(() => _formStep--),
+                child: const Text('Back'),
               )
             else
-              Row(children: [
-                OutlinedButton.icon(onPressed: _resetForm, icon: const Icon(Icons.refresh), label: const Text('Reset Form')),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submit,
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade600),
-                  child: _isSubmitting ? const SizedBox(width: 120, child: Center(child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))) : const Text('Submit Work Order'),
-                ),
-              ])
-          ])
-        ]),
+              TextButton(
+                onPressed: widget.onCancel,
+                child: const Text('Cancel'),
+              ),
+            Row(
+              children: [
+                if (_formStep < 3)
+                  ElevatedButton(
+                    onPressed:
+                        (_formStep == 1 &&
+                            (_carrierCtl.text.isEmpty ||
+                                _flightNoCtl.text.isEmpty ||
+                                _requestedByCtl.text.isEmpty ||
+                                _contactNumberCtl.text.isEmpty))
+                        ? null
+                        : () => setState(() => _formStep++),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red.shade600,
+                    ),
+                    child: Text(
+                      _formStep == 1
+                          ? 'Continue to Services'
+                          : 'Review Request',
+                    ),
+                  )
+                else
+                  Row(
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: _resetForm,
+                        icon: const Icon(Icons.refresh),
+                        label: const Text('Reset Form'),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: _isSubmitting ? null : _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red.shade600,
+                        ),
+                        child: _isSubmitting
+                            ? const SizedBox(
+                                width: 120,
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              )
+                            : const Text('Submit Work Order'),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+          ],
+        ),
         const SizedBox(height: 12),
 
         // Footer card
         Card(
           child: Padding(
             padding: const EdgeInsets.all(12),
-            child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-              Row(children: const [Icon(Icons.access_time, size: 16), SizedBox(width: 6), Text('Auto-save enabled')]),
-              Row(children: [
-                const Icon(Icons.location_on, size: 16),
-                const SizedBox(width: 6),
-                const Text('Airport Service Department'),
-                const SizedBox(width: 12),
-                OutlinedButton.icon(onPressed: () {}, icon: const Icon(Icons.print), label: const Text('Print')),
-                const SizedBox(width: 8),
-                TextButton(onPressed: widget.onCancel, child: const Text('Cancel')),
-              ]),
-            ]),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: const [
+                    Icon(Icons.access_time, size: 16),
+                    SizedBox(width: 6),
+                    Text('Auto-save enabled'),
+                  ],
+                ),
+                Row(
+                  children: [
+                    const Icon(Icons.location_on, size: 16),
+                    const SizedBox(width: 6),
+                    const Text('Airport Service Department'),
+                    const SizedBox(width: 12),
+                    OutlinedButton.icon(
+                      onPressed: () {},
+                      icon: const Icon(Icons.print),
+                      label: const Text('Print'),
+                    ),
+                    const SizedBox(width: 8),
+                    TextButton(
+                      onPressed: widget.onCancel,
+                      child: const Text('Cancel'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ],
@@ -301,18 +407,32 @@ class _NewWorkOrderFormState extends State<NewWorkOrderForm> {
   }
 
   Widget _stepCircle(int n, String label, bool active) {
-    return Row(children: [
-      Container(
-        width: 36,
-        height: 36,
-        decoration: BoxDecoration(color: active ? Colors.red.shade600 : Colors.grey.shade300, shape: BoxShape.circle),
-        child: Center(child: Text('$n', style: const TextStyle(color: Colors.white))),
-      ),
-      const SizedBox(width: 8),
-      Text(label, style: TextStyle(color: active ? Colors.red.shade600 : Colors.grey)),
-      const SizedBox(width: 8),
-    ]);
+    return Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(
+            color: active ? Colors.red.shade600 : Colors.grey.shade300,
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text('$n', style: const TextStyle(color: Colors.white)),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: TextStyle(color: active ? Colors.red.shade600 : Colors.grey),
+        ),
+        const SizedBox(width: 8),
+      ],
+    );
   }
 
-  Widget _line(bool active) => Container(width: 36, height: 4, color: active ? Colors.red.shade600 : Colors.grey.shade200);
+  Widget _line(bool active) => Container(
+    width: 36,
+    height: 4,
+    color: active ? Colors.red.shade600 : Colors.grey.shade200,
+  );
 }

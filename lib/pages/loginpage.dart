@@ -52,7 +52,8 @@ class LoginPage extends StatelessWidget {
     required String email,
     required String password,
     required bool rememberMe,
-  }) onLogin;
+  })
+  onLogin;
   final VoidCallback onDemoApproval;
   final VoidCallback onDemoAdminLogin;
 
@@ -101,10 +102,16 @@ class LoginPage extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // Left features column
-                            Expanded(flex: 1, child: _buildLeftPanel(context, company)),
+                            Expanded(
+                              flex: 1,
+                              child: _buildLeftPanel(context, company),
+                            ),
                             const SizedBox(width: 20),
                             // Right login column
-                            Expanded(flex: 1, child: _buildRightPanel(context, company)),
+                            Expanded(
+                              flex: 1,
+                              child: _buildRightPanel(context, company),
+                            ),
                           ],
                         );
                       } else {
@@ -184,10 +191,7 @@ class LoginPage extends StatelessWidget {
                     gradient: LinearGradient(
                       begin: Alignment.bottomCenter,
                       end: Alignment.topCenter,
-                      colors: [
-                        Color(0xAA7F1D1D),
-                        Colors.transparent,
-                      ],
+                      colors: [Color(0xAA7F1D1D), Colors.transparent],
                     ),
                   ),
                 ),
@@ -196,10 +200,7 @@ class LoginPage extends StatelessWidget {
                   left: 8,
                   child: Text(
                     "Professional airport ground services",
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                 ),
               ],
@@ -250,7 +251,10 @@ class LoginPage extends StatelessWidget {
     );
   }
 
-  Widget _buildMobileHeader(BuildContext context, Map<String, dynamic> company) {
+  Widget _buildMobileHeader(
+    BuildContext context,
+    Map<String, dynamic> company,
+  ) {
     return Column(
       children: [
         const SizedBox(height: 24),

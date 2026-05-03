@@ -57,7 +57,7 @@ const Map<String, Map<String, dynamic>> _serviceDefinitions = {
       'Equipment Repair Request',
       'Emergency Services Coordination',
     ],
-  }
+  },
 };
 
 class SectionServices extends StatelessWidget {
@@ -87,32 +87,42 @@ class SectionServices extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Row(children: [
-          Checkbox(value: isSelected, onChanged: (v) => onToggle(catKey, service, v ?? false)),
-          Expanded(child: Text(service)),
-        ]),
+        Row(
+          children: [
+            Checkbox(
+              value: isSelected,
+              onChanged: (v) => onToggle(catKey, service, v ?? false),
+            ),
+            Expanded(child: Text(service)),
+          ],
+        ),
         if (isSelected)
           Padding(
             padding: const EdgeInsets.only(left: 40.0, top: 6, bottom: 6),
-            child: Row(children: [
-              SizedBox(
-                width: 110,
-                child: TextFormField(
-                  initialValue: quantities[service]?.toString() ?? '',
-                  onChanged: (s) => onQuantityChanged(service, int.tryParse(s) ?? 1),
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(labelText: 'Qty'),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 110,
+                  child: TextFormField(
+                    initialValue: quantities[service]?.toString() ?? '',
+                    onChanged: (s) =>
+                        onQuantityChanged(service, int.tryParse(s) ?? 1),
+                    keyboardType: TextInputType.number,
+                    decoration: const InputDecoration(labelText: 'Qty'),
+                  ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: TextFormField(
-                  initialValue: notes[service] ?? '',
-                  onChanged: (s) => onNoteChanged(service, s),
-                  decoration: const InputDecoration(labelText: 'Special notes'),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    initialValue: notes[service] ?? '',
+                    onChanged: (s) => onNoteChanged(service, s),
+                    decoration: const InputDecoration(
+                      labelText: 'Special notes',
+                    ),
+                  ),
                 ),
-              ),
-            ]),
+              ],
+            ),
           ),
         const SizedBox(height: 8),
       ],
@@ -130,18 +140,37 @@ class SectionServices extends StatelessWidget {
           margin: const EdgeInsets.symmetric(vertical: 8),
           child: Padding(
             padding: const EdgeInsets.all(12),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
-                Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(meta['title'] as String, style: const TextStyle(fontWeight: FontWeight.w600)),
-                  const SizedBox(height: 4),
-                  Text(meta['subtitle'] as String, style: const TextStyle(color: Colors.grey)),
-                ]),
-                Chip(label: Text('${selected[catKey]!.length} selected')),
-              ]),
-              const SizedBox(height: 12),
-              Column(children: services.map((s) => _serviceTile(context, catKey, s)).toList()),
-            ]),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          meta['title'] as String,
+                          style: const TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          meta['subtitle'] as String,
+                          style: const TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                    Chip(label: Text('${selected[catKey]!.length} selected')),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Column(
+                  children: services
+                      .map((s) => _serviceTile(context, catKey, s))
+                      .toList(),
+                ),
+              ],
+            ),
           ),
         );
       }).toList(),

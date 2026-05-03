@@ -7,9 +7,14 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:agop_finalyear/main.dart';
+import 'package:flutter/material.dart';
 
 void main() {
-  testWidgets('App loads and shows company name on login page', (WidgetTester tester) async {
+  testWidgets('App loads and shows company name on login page', (
+    WidgetTester tester,
+  ) async {
+    tester.view.physicalSize = const Size(1920, 1080);
+    tester.view.devicePixelRatio = 1.0;
     // Build the real app so Material widgets are available.
     await tester.pumpWidget(const GroundOperationsApp());
     await tester.pumpAndSettle();

@@ -5,7 +5,12 @@ class CreateWorkOrderHeader extends StatelessWidget {
   final VoidCallback onBack;
   final VoidCallback onPickImage;
 
-  const CreateWorkOrderHeader({super.key, required this.workOrderNumber, required this.onBack, required this.onPickImage});
+  const CreateWorkOrderHeader({
+    super.key,
+    required this.workOrderNumber,
+    required this.onBack,
+    required this.onPickImage,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -15,12 +20,23 @@ class CreateWorkOrderHeader extends StatelessWidget {
         Expanded(
           child: Row(
             children: [
-              OutlinedButton.icon(onPressed: onBack, icon: const Icon(Icons.arrow_left), label: const Text('Back to Work Orders')),
+              OutlinedButton.icon(
+                onPressed: onBack,
+                icon: const Icon(Icons.arrow_left),
+                label: const Text('Back to Work Orders'),
+              ),
               const SizedBox(width: 12),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const [
-                  Text('Additional Service Work Order', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF7F1D1D))),
+                  Text(
+                    'Additional Service Work Order',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF7F1D1D),
+                    ),
+                  ),
                   SizedBox(height: 4),
                 ],
               ),
@@ -30,15 +46,23 @@ class CreateWorkOrderHeader extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text('No. $workOrderNumber', style: const TextStyle(color: Colors.grey)),
+            Text(
+              'No. $workOrderNumber',
+              style: const TextStyle(color: Colors.grey),
+            ),
             const SizedBox(height: 8),
             GestureDetector(
               onTap: onPickImage,
               child: Container(
                 width: 120,
                 height: 72,
-                decoration: BoxDecoration(borderRadius: BorderRadius.circular(8), border: Border.all(color: Colors.grey.shade200)),
-                child: const Center(child: Icon(Icons.photo, color: Colors.grey)),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade200),
+                ),
+                child: const Center(
+                  child: Icon(Icons.photo, color: Colors.grey),
+                ),
               ),
             ),
           ],

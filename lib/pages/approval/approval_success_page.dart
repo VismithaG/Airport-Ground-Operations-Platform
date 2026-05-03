@@ -27,20 +27,29 @@ class ApprovalSuccessPage extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(isApproved ? Icons.check_circle : Icons.cancel, color: color, size: 80),
+                Icon(
+                  isApproved ? Icons.check_circle : Icons.cancel,
+                  color: color,
+                  size: 80,
+                ),
                 const SizedBox(height: 24),
-                Text("Work Order $decision${isApproved ? 'd' : 'ed'}", 
-                  textAlign: TextAlign.center, 
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: color)
+                Text(
+                  "Work Order $decision${isApproved ? 'd' : 'ed'}",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
                 ),
                 const SizedBox(height: 16),
                 const Text(
-                  "Your decision has been recorded and processed successfully.", 
-                  textAlign: TextAlign.center, 
-                  style: TextStyle(color: Colors.grey)
+                  "Your decision has been recorded and processed successfully.",
+                  textAlign: TextAlign.center,
+                  style: TextStyle(color: Colors.grey),
                 ),
                 const SizedBox(height: 32),
-                
+
                 // Summary Card
                 Container(
                   padding: const EdgeInsets.all(20),
@@ -53,7 +62,11 @@ class ApprovalSuccessPage extends StatelessWidget {
                     children: [
                       _row("Work Order", "#$workOrderId"),
                       const Divider(),
-                      _row("Decision", decision.toUpperCase(), valueColor: color),
+                      _row(
+                        "Decision",
+                        decision.toUpperCase(),
+                        valueColor: color,
+                      ),
                       const Divider(),
                       _row("Supervisor", supervisorName),
                       const Divider(),
@@ -66,8 +79,14 @@ class ApprovalSuccessPage extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: () => Navigator.of(context).popUntil((route) => route.isFirst),
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFB71C1C), foregroundColor: Colors.white, padding: const EdgeInsets.all(16)),
+                    onPressed: () => Navigator.of(
+                      context,
+                    ).popUntil((route) => route.isFirst),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFFB71C1C),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.all(16),
+                    ),
                     child: const Text("Back to Dashboard"),
                   ),
                 ),
@@ -86,7 +105,13 @@ class ApprovalSuccessPage extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(label, style: const TextStyle(color: Colors.grey)),
-          Text(value, style: TextStyle(fontWeight: FontWeight.bold, color: valueColor ?? Colors.black87)),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              color: valueColor ?? Colors.black87,
+            ),
+          ),
         ],
       ),
     );

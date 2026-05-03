@@ -85,5 +85,4 @@ class DefaultFirebaseOptions {
     projectId: 'agop-finalyear',
     storageBucket: 'agop-finalyear.firebasestorage.app',
   );
-
 }

@@ -9,7 +9,12 @@ class WorkOrderApprovalPage extends StatefulWidget {
   final UserInfo? currentUser;
   final Map<String, dynamic>? workOrderData;
 
-  const WorkOrderApprovalPage({super.key, required this.workOrderId, this.currentUser, this.workOrderData});
+  const WorkOrderApprovalPage({
+    super.key,
+    required this.workOrderId,
+    this.currentUser,
+    this.workOrderData,
+  });
 
   @override
   State<WorkOrderApprovalPage> createState() => _WorkOrderApprovalPageState();
@@ -17,7 +22,7 @@ class WorkOrderApprovalPage extends StatefulWidget {
 
 class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
   final GlobalKey<SignaturePadState> _signKey = GlobalKey();
-  
+
   // Form State
   String _decision = 'Approve'; // Approve or Reject
   final _nameCtl = TextEditingController();
@@ -40,28 +45,35 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
 
   void _submit() async {
     if (!_hasSigned) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Digital signature is required")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Digital signature is required")),
+      );
       return;
     }
 
     setState(() => _isSubmitting = true);
-    
+
     try {
-      await FirebaseFirestore.instance.collection('workOrders').doc(widget.workOrderId).update({
-        'status': _decision == 'Approve' ? 'Approved' : 'Rejected',
-        'supervisorName': _nameCtl.text,
-        'decisionComments': _commentsCtl.text,
-      });
+      await FirebaseFirestore.instance
+          .collection('workOrders')
+          .doc(widget.workOrderId)
+          .update({
+            'status': _decision == 'Approve' ? 'Approved' : 'Rejected',
+            'supervisorName': _nameCtl.text,
+            'decisionComments': _commentsCtl.text,
+          });
     } catch (e) {
       if (mounted) {
-         setState(() => _isSubmitting = false);
-         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Failed to update: $e')));
+        setState(() => _isSubmitting = false);
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Failed to update: $e')));
       }
       return;
     }
 
     if (!mounted) return;
-    
+
     // Navigate to Success Page
     Navigator.pushReplacement(
       context,
@@ -78,7 +90,8 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
   @override
   Widget build(BuildContext context) {
     final String? role = widget.currentUser?.role;
-    final bool allowed = role != null && (role == 'Supervisor' || role == 'Administrator');
+    final bool allowed =
+        role != null && (role == 'Supervisor' || role == 'Administrator');
 
     if (!allowed) {
       return Scaffold(
@@ -99,9 +112,16 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
               children: [
                 const Icon(Icons.block, size: 64, color: Colors.grey),
                 const SizedBox(height: 12),
-                const Text("You do not have permission to approve this work order.", style: TextStyle(fontSize: 16), textAlign: TextAlign.center),
+                const Text(
+                  "You do not have permission to approve this work order.",
+                  style: TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
                 const SizedBox(height: 16),
-                ElevatedButton(onPressed: () => Navigator.pop(context), child: const Text("Back")),
+                ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Back"),
+                ),
               ],
             ),
           ),
@@ -129,7 +149,13 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(12),
-              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8, offset: const Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black12,
+                  blurRadius: 8,
+                  offset: const Offset(0, 4),
+                ),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -138,16 +164,40 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      const Text("Supervisor Review", style: TextStyle(color: Colors.grey)),
-                      const SizedBox(height: 4),
-                      Text("WO #${widget.workOrderId}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                    ]),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          "Supervisor Review",
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          "WO #${widget.workOrderId}",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(color: Colors.orange.shade100, borderRadius: BorderRadius.circular(20)),
-                      child: Text("${widget.workOrderData?['priority'] ?? 'Medium'} Priority", style: const TextStyle(fontSize: 12, color: Colors.brown)),
-                    )
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.shade100,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        "${widget.workOrderData?['priority'] ?? 'Medium'} Priority",
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.brown,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
                 const Divider(height: 30),
@@ -155,28 +205,61 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
                 // Flight Info (Read Only)
                 _sectionTitle(Icons.flight, "Work Order Details"),
                 const SizedBox(height: 12),
-                _readOnlyRow("Airline/Carrier", widget.workOrderData != null ? widget.workOrderData!['title'] : "Emirates", "Flight Number", ""),
-                _readOnlyRow("Aircraft", widget.workOrderData?['aircraft'] ?? "A330 B2", "Gate", widget.workOrderData?['location'] ?? "A12"),
+                _readOnlyRow(
+                  "Airline/Carrier",
+                  widget.workOrderData != null
+                      ? widget.workOrderData!['title']
+                      : "Emirates",
+                  "Flight Number",
+                  "",
+                ),
+                _readOnlyRow(
+                  "Aircraft",
+                  widget.workOrderData?['aircraft'] ?? "A330 B2",
+                  "Gate",
+                  widget.workOrderData?['location'] ?? "A12",
+                ),
                 const SizedBox(height: 16),
-                
+
                 // Request Info
                 _readOnlyField("Requested By", "Maintenance System"),
-                _readOnlyField("Department", widget.workOrderData?['department'] ?? "Ground Operations"),
+                _readOnlyField(
+                  "Department",
+                  widget.workOrderData?['department'] ?? "Ground Operations",
+                ),
                 const SizedBox(height: 16),
-                
+
                 // Services List
-                const Text("Requested Services", style: TextStyle(fontWeight: FontWeight.w600)),
+                const Text(
+                  "Requested Services",
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
                 const SizedBox(height: 8),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
-                  children: (widget.workOrderData?['services'] as List<dynamic>? ?? [
-                     "Ground Power Unit (GPU)", "Passenger Stairs", "VIP/CIP Lounge Access", "Priority Baggage"
-                  ]).map((s) => Chip(label: Text(s.toString(), style: const TextStyle(fontSize: 12)), backgroundColor: Colors.grey[100])).toList(),
+                  children:
+                      (widget.workOrderData?['services'] as List<dynamic>? ??
+                              [
+                                "Ground Power Unit (GPU)",
+                                "Passenger Stairs",
+                                "VIP/CIP Lounge Access",
+                                "Priority Baggage",
+                              ])
+                          .map(
+                            (s) => Chip(
+                              label: Text(
+                                s.toString(),
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              backgroundColor: Colors.grey[100],
+                            ),
+                          )
+                          .toList(),
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // --- Decision Section ---
                 _sectionTitle(Icons.gavel, "Approval Decision"),
                 const SizedBox(height: 12),
@@ -198,7 +281,9 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
                   readOnly: widget.currentUser != null,
                   decoration: _inputDecor("Full Name *").copyWith(
                     filled: widget.currentUser != null,
-                    fillColor: widget.currentUser != null ? Colors.grey.shade100 : null,
+                    fillColor: widget.currentUser != null
+                        ? Colors.grey.shade100
+                        : null,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -207,7 +292,9 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
                   readOnly: widget.currentUser != null,
                   decoration: _inputDecor("Title/Position *").copyWith(
                     filled: widget.currentUser != null,
-                    fillColor: widget.currentUser != null ? Colors.grey.shade100 : null,
+                    fillColor: widget.currentUser != null
+                        ? Colors.grey.shade100
+                        : null,
                   ),
                 ),
                 const SizedBox(height: 12),
@@ -216,19 +303,20 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
                   maxLines: 3,
                   decoration: _inputDecor("Comments & Notes"),
                 ),
-                
+
                 const SizedBox(height: 24),
-                
+
                 // Signature
                 _sectionTitle(Icons.draw, "Digital Signature *"),
                 const SizedBox(height: 8),
                 SignaturePad(
                   key: _signKey,
-                  onSigned: (hasSigned) => setState(() => _hasSigned = hasSigned),
+                  onSigned: (hasSigned) =>
+                      setState(() => _hasSigned = hasSigned),
                 ),
 
                 const SizedBox(height: 32),
-                
+
                 // Submit
                 ElevatedButton(
                   onPressed: _isSubmitting ? null : _submit,
@@ -236,14 +324,32 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
                     backgroundColor: const Color(0xFFB71C1C),
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
                   ),
-                  child: _isSubmitting 
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
-                    : const Text("Submit Approval", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                  child: _isSubmitting
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                            color: Colors.white,
+                            strokeWidth: 2,
+                          ),
+                        )
+                      : const Text(
+                          "Submit Approval",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
-                 const SizedBox(height: 12),
-                 OutlinedButton(onPressed: () => Navigator.pop(context), child: const Text("Back to Work Orders")),
+                const SizedBox(height: 12),
+                OutlinedButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Back to Work Orders"),
+                ),
               ],
             ),
           ),
@@ -253,11 +359,16 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
   }
 
   Widget _sectionTitle(IconData icon, String title) {
-    return Row(children: [
-      Icon(icon, size: 18, color: const Color(0xFFB71C1C)),
-      const SizedBox(width: 8),
-      Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-    ]);
+    return Row(
+      children: [
+        Icon(icon, size: 18, color: const Color(0xFFB71C1C)),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+        ),
+      ],
+    );
   }
 
   Widget _readOnlyRow(String l1, String v1, String l2, String v2) {
@@ -265,8 +376,30 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
       padding: const EdgeInsets.only(bottom: 8),
       child: Row(
         children: [
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(l1, style: const TextStyle(color: Colors.grey, fontSize: 12)), Text(v1, style: const TextStyle(fontWeight: FontWeight.w500))])),
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(l2, style: const TextStyle(color: Colors.grey, fontSize: 12)), Text(v2, style: const TextStyle(fontWeight: FontWeight.w500))])),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l1,
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+                Text(v1, style: const TextStyle(fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  l2,
+                  style: const TextStyle(color: Colors.grey, fontSize: 12),
+                ),
+                Text(v2, style: const TextStyle(fontWeight: FontWeight.w500)),
+              ],
+            ),
+          ),
         ],
       ),
     );
@@ -275,7 +408,13 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
   Widget _readOnlyField(String label, String value) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)), Text(value, style: const TextStyle(fontWeight: FontWeight.w500))]),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+          Text(value, style: const TextStyle(fontWeight: FontWeight.w500)),
+        ],
+      ),
     );
   }
 
@@ -285,17 +424,32 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
       onTap: () => setState(() => _decision = label),
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-          color: isSelected ? color.withAlpha((0.1 * 255).round()) : Colors.white,
-          border: Border.all(color: isSelected ? color : Colors.grey.shade300, width: isSelected ? 2.0 : 1.0),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? color.withAlpha((0.1 * 255).round())
+              : Colors.white,
+          border: Border.all(
+            color: isSelected ? color : Colors.grey.shade300,
+            width: isSelected ? 2.0 : 1.0,
+          ),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(isSelected ? Icons.check_circle : Icons.circle_outlined, size: 18, color: isSelected ? color : Colors.grey),
+            Icon(
+              isSelected ? Icons.check_circle : Icons.circle_outlined,
+              size: 18,
+              color: isSelected ? color : Colors.grey,
+            ),
             const SizedBox(width: 8),
-            Text(label, style: TextStyle(color: isSelected ? color : Colors.grey[700], fontWeight: FontWeight.bold)),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? color : Colors.grey[700],
+                fontWeight: FontWeight.bold,
+              ),
+            ),
           ],
         ),
       ),

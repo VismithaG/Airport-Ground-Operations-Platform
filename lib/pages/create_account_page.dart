@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:cloud_functions/cloud_functions.dart';
 import '../firebase_options.dart';
+import '../services/activity_logger.dart';
 
 class CreateAccountPage extends StatefulWidget {
   const CreateAccountPage({super.key});
@@ -51,7 +52,10 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     super.dispose();
   }
 
-  Future<void> _selectDate(BuildContext context, TextEditingController controller) async {
+  Future<void> _selectDate(
+    BuildContext context,
+    TextEditingController controller,
+  ) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -92,17 +96,19 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
       final adminAuth = FirebaseAuth.instanceFor(app: adminApp);
 
       // 2. Create the user in Firebase Auth using the secondary app
-      final UserCredential userCredential = await adminAuth.createUserWithEmailAndPassword(
-        email: _workEmailCtrl.text.trim(),
-        password: _passwordCtrl.text,
-      );
+      final UserCredential userCredential = await adminAuth
+          .createUserWithEmailAndPassword(
+            email: _workEmailCtrl.text.trim(),
+            password: _passwordCtrl.text,
+          );
 
       final user = userCredential.user;
 
       if (user != null) {
         // 3. Call Cloud Function to assign claims
         try {
-          final HttpsCallable callable = FirebaseFunctions.instance.httpsCallable('grantAuthorizedClaim');
+          final HttpsCallable callable = FirebaseFunctions.instance
+              .httpsCallable('grantAuthorizedClaim');
           await callable.call({'uid': user.uid});
           debugPrint('Successfully set authorized claim for \${user.uid}');
         } catch (e) {
@@ -128,8 +134,17 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
           'createdAt': FieldValue.serverTimestamp(),
           // Default fields for admin panel UI
           'status': 'Active',
-          'lastLogin': '', 
+          'lastLogin': '',
         });
+
+        // Log the activity
+        ActivityLogger.logEvent(
+          action: 'Account Created',
+          user: 'Administrator', // Since only admin can reach here
+          details:
+              'Created new $_selectedUserType account for ${_workEmailCtrl.text.trim()}',
+          severity: 'Info',
+        );
 
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -157,10 +172,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(msg),
-            backgroundColor: Colors.redAccent,
-          ),
+          SnackBar(content: Text(msg), backgroundColor: Colors.redAccent),
         );
       }
     } on FirebaseException catch (e) {
@@ -176,7 +188,9 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('An unexpected error occurred processing the request.'),
+            content: Text(
+              'An unexpected error occurred processing the request.',
+            ),
             backgroundColor: Colors.redAccent,
           ),
         );
@@ -202,9 +216,7 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Create New Account'),
-      ),
+      appBar: AppBar(title: const Text('Create New Account')),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SingleChildScrollView(
@@ -214,7 +226,9 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                   constraints: const BoxConstraints(maxWidth: 600),
                   child: Card(
                     elevation: 4,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                     child: Padding(
                       padding: const EdgeInsets.all(24.0),
                       child: Form(
@@ -222,33 +236,104 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Text('User Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            const Text(
+                              'User Information',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(height: 16),
-                            _buildTextField('Full Name', _fullNameCtrl, required: true),
-                            _buildDateField('Date of Birth', _dobCtrl, required: true),
+                            _buildTextField(
+                              'Full Name',
+                              _fullNameCtrl,
+                              required: true,
+                            ),
+                            _buildDateField(
+                              'Date of Birth',
+                              _dobCtrl,
+                              required: true,
+                            ),
                             _buildTextField('NIC', _nicCtrl, required: true),
-                            _buildTextField('Home Address', _homeAddressCtrl, required: false),
-                            
+                            _buildTextField(
+                              'Home Address',
+                              _homeAddressCtrl,
+                              required: false,
+                            ),
+
                             const SizedBox(height: 24),
-                            const Text('Contact Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            const Text(
+                              'Contact Information',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(height: 16),
-                            _buildTextField('Work Email Address', _workEmailCtrl, required: true, isEmail: true),
-                            _buildTextField('Personal Email Address', _personalEmailCtrl, required: false, isEmail: true),
-                            
+                            _buildTextField(
+                              'Work Email Address',
+                              _workEmailCtrl,
+                              required: true,
+                              isEmail: true,
+                            ),
+                            _buildTextField(
+                              'Personal Email Address',
+                              _personalEmailCtrl,
+                              required: false,
+                              isEmail: true,
+                            ),
+
                             const SizedBox(height: 24),
-                            const Text('Account Credentials', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            const Text(
+                              'Account Credentials',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(height: 16),
-                            _buildTextField('Staff ID', _staffIdCtrl, required: true),
-                            _buildTextField('Username', _usernameCtrl, required: true),
-                            _buildTextField('Password', _passwordCtrl, required: true, obscureText: true),
-                            
+                            _buildTextField(
+                              'Staff ID',
+                              _staffIdCtrl,
+                              required: true,
+                            ),
+                            _buildTextField(
+                              'Username',
+                              _usernameCtrl,
+                              required: true,
+                            ),
+                            _buildTextField(
+                              'Password',
+                              _passwordCtrl,
+                              required: true,
+                              obscureText: true,
+                            ),
+
                             const SizedBox(height: 24),
-                            const Text('Employment Information', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                            const Text(
+                              'Employment Information',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
                             const SizedBox(height: 16),
-                            _buildTextField('Department', _departmentCtrl, required: true),
-                            _buildTextField('Designation', _designationCtrl, required: true),
-                            _buildDateField('Date of Enrollment', _enrollmentDateCtrl, required: false),
-                            
+                            _buildTextField(
+                              'Department',
+                              _departmentCtrl,
+                              required: true,
+                            ),
+                            _buildTextField(
+                              'Designation',
+                              _designationCtrl,
+                              required: true,
+                            ),
+                            _buildDateField(
+                              'Date of Enrollment',
+                              _enrollmentDateCtrl,
+                              required: false,
+                            ),
+
                             const SizedBox(height: 16),
                             DropdownButtonFormField<String>(
                               decoration: const InputDecoration(
@@ -268,17 +353,22 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
                                 });
                               },
                             ),
-                            
+
                             const SizedBox(height: 32),
                             SizedBox(
                               width: double.infinity,
                               height: 50,
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
                                 ),
                                 onPressed: _createAccount,
-                                child: const Text('Add User', style: TextStyle(fontSize: 16)),
+                                child: const Text(
+                                  'Add User',
+                                  style: TextStyle(fontSize: 16),
+                                ),
                               ),
                             ),
                           ],
@@ -292,7 +382,13 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller, {bool required = false, bool obscureText = false, bool isEmail = false}) {
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller, {
+    bool required = false,
+    bool obscureText = false,
+    bool isEmail = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: TextFormField(
@@ -309,7 +405,9 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
           }
           if (isEmail && value != null && value.trim().isNotEmpty) {
             // Very basic email validation
-            if (!RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(value)) {
+            if (!RegExp(
+              r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+",
+            ).hasMatch(value)) {
               return 'Enter a valid email address';
             }
           }
@@ -319,7 +417,11 @@ class _CreateAccountPageState extends State<CreateAccountPage> {
     );
   }
 
-  Widget _buildDateField(String label, TextEditingController controller, {required bool required}) {
+  Widget _buildDateField(
+    String label,
+    TextEditingController controller, {
+    required bool required,
+  }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: TextFormField(
