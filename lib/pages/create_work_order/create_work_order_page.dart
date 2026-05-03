@@ -231,6 +231,20 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
             final d = await showDatePicker(context: context, initialDate: DateTime.now(), firstDate: DateTime.now(), lastDate: DateTime(2030));
             if (d != null) setState(() => _serviceDate = d);
           },
+          onPickTime: () async {
+            final t = await showTimePicker(
+              context: context,
+              initialTime: TimeOfDay.now(),
+              initialEntryMode: TimePickerEntryMode.dial,
+            );
+            if (t != null) {
+              if (mounted) {
+                setState(() {
+                  _timeCtl.text = t.format(context);
+                });
+              }
+            }
+          },
           serviceDate: _serviceDate,
           requestedByCtl: _requestedByCtl,
           contactCtl: _contactCtl,

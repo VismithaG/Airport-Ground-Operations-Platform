@@ -8,6 +8,7 @@ class SectionFlightInfo extends StatelessWidget {
   final String aircraftType;
   final ValueChanged<String> onAircraftChanged;
   final VoidCallback onPickDate;
+  final VoidCallback onPickTime;
   final DateTime serviceDate;
   
   // New Fields for Requester Info
@@ -28,6 +29,7 @@ class SectionFlightInfo extends StatelessWidget {
     required this.aircraftType,
     required this.onAircraftChanged,
     required this.onPickDate,
+    required this.onPickTime,
     required this.serviceDate,
     required this.requestedByCtl,
     required this.contactCtl,
@@ -59,7 +61,7 @@ class SectionFlightInfo extends StatelessWidget {
                     child: DropdownButtonFormField<String>(
                       initialValue: aircraftType,
                       decoration: _inputDecoration("Aircraft Type"),
-                      items: ["A320", "A330", "A350", "B777"].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                      items: ["A319", "A320", "A321", "A330", "A340", "A350", "A380", "B737", "B747", "B767", "B777", "B787", "E190", "Q400"].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
                       onChanged: (v) { if (v != null) onAircraftChanged(v); },
                     ),
                   ),
@@ -70,7 +72,15 @@ class SectionFlightInfo extends StatelessWidget {
               const SizedBox(height: 12),
               Row(
                 children: [
-                  Expanded(child: _buildTextField(timeCtl, "Scheduled Time", "--:--")),
+                  Expanded(
+                    child: InkWell(
+                      onTap: onPickTime,
+                      child: InputDecorator(
+                        decoration: _inputDecoration("Scheduled Time"),
+                        child: Text(timeCtl.text.isEmpty ? "--:--" : timeCtl.text),
+                      ),
+                    ),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: InkWell(
