@@ -180,63 +180,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _demoApproval() {
-    final user = UserInfo(
-      name: "Approval Demo",
-      role: "Supervisor",
-      email: "supervisor@demo",
-      designation: "Demo Supervisor",
-    );
-    // Demo approval remains dashboard
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => DashboardPage(
-          onLogout: (ctx) {
-            debugPrint('Main: onLogout called - navigating to LoginScreen');
-            Navigator.pushReplacement(
-              ctx,
-              MaterialPageRoute(builder: (_) => const LoginScreen()),
-            );
-          },
-          currentUser: user,
-        ),
-      ),
-    );
-  }
-
-  void _demoAdminLogin() {
-    final user = UserInfo(
-      name: "Admin Demo",
-      role: "Administrator",
-      email: "admin@demo",
-      designation: "Demo Admin",
-    );
-    // Demo admin should open Admin Panel
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => AdminPanelPage(
-          currentUser: {
-            "name": user.name,
-            "role": user.role,
-            "email": user.email,
-            "designation": user.designation,
-          },
-          onLogout: (ctx) {
-            debugPrint(
-              'Main: admin onLogout called - navigating to LoginScreen',
-            );
-            Navigator.pushReplacement(
-              ctx,
-              MaterialPageRoute(builder: (_) => const LoginScreen()),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     // LoginPage widget expects callbacks (see lib/pages/loginpage.dart)
@@ -253,8 +196,6 @@ class _LoginScreenState extends State<LoginScreen> {
               rememberMe: rememberMe,
             );
           },
-      onDemoApproval: _demoApproval,
-      onDemoAdminLogin: _demoAdminLogin,
     );
   }
 }
