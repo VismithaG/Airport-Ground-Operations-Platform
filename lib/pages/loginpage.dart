@@ -120,7 +120,7 @@ class LoginPage extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               _buildMobileHeader(context, company),
-                              const SizedBox(height: 12),
+                              const SizedBox(height: 24),
                               _buildRightPanel(context, company),
                             ],
                           ),
@@ -256,47 +256,9 @@ class LoginPage extends StatelessWidget {
 
   Widget _buildRightPanel(BuildContext context, Map<String, dynamic> company) {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         LoginForm(onLogin: onLogin),
-        const SizedBox(height: 24),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: const Color(0xFFEFF6FF),
-            border: Border.all(color: const Color(0xFFBFDBFE)),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text(
-                "Demo Instructions",
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E3A8A),
-                  fontSize: 14,
-                ),
-              ),
-              SizedBox(height: 8),
-              Text(
-                "• Use any email/password to login as regular user\n"
-                "• Use admin@airport.com to login as admin\n"
-                "• Include 'supervisor' in email for supervisor role\n"
-                "• Click demo buttons to test specific workflows",
-                style: TextStyle(fontSize: 12, color: Color(0xFF1E40AF)),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 24),
-        Text(
-          "© 2025 ${company['name'] ?? ''}. All rights reserved.",
-          style: const TextStyle(fontSize: 10, color: Colors.grey),
-        ),
-        Text(
-          "For technical support, contact IT services at ${company['contact']?['support'] ?? ''}",
-          style: const TextStyle(fontSize: 10, color: Colors.grey),
-        ),
       ],
     );
   }
