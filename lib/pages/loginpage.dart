@@ -207,46 +207,7 @@ class LoginPage extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(height: 24),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.8),
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.red.shade200),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Demo Options: Test different system features",
-                style: TextStyle(fontSize: 14, color: Colors.black87),
-              ),
-              const SizedBox(height: 12),
-              Column(
-                children: [
-                  ElevatedButton(
-                    onPressed: onDemoApproval,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.red,
-                      minimumSize: const Size.fromHeight(40),
-                    ),
-                    child: const Text("Demo Approval Workflow"),
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: onDemoAdminLogin,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      minimumSize: const Size.fromHeight(40),
-                    ),
-                    child: const Text("Demo Admin Panel"),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
+
       ],
     );
   }
