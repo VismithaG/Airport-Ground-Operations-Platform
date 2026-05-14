@@ -46,40 +46,6 @@ class _LoginFormState extends State<LoginForm> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              // Header
-              Column(
-                children: [
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.flight,
-                      color: Colors.white,
-                      size: 32,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    "Airport Service Department",
-                    style: TextStyle(
-                      color: Color(0xFF7F1D1D),
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    "Enter your credentials to access the service portal",
-                    style: TextStyle(color: Colors.grey, fontSize: 14),
-                    textAlign: TextAlign.center,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
 
               // Email field
               TextFormField(
@@ -112,7 +78,7 @@ class _LoginFormState extends State<LoginForm> {
                   labelText: "Password",
                   hintText: "Enter your password",
                   prefixIcon: const Icon(
-                    Icons.shield_outlined,
+                    Icons.lock_outline,
                     color: Colors.grey,
                   ),
                   border: OutlineInputBorder(

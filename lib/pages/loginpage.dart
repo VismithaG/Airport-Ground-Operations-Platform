@@ -54,14 +54,10 @@ class LoginPage extends StatelessWidget {
     required bool rememberMe,
   })
   onLogin;
-  final VoidCallback onDemoApproval;
-  final VoidCallback onDemoAdminLogin;
 
   const LoginPage({
     super.key,
     required this.onLogin,
-    required this.onDemoApproval,
-    required this.onDemoAdminLogin,
   });
 
   @override
@@ -99,16 +95,16 @@ class LoginPage extends StatelessWidget {
                       // Desktop/tablet: two-column layout. Mobile: stacked column.
                       if (isLargeScreen) {
                         return Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            // Left features column
+                            // Left branding column
                             Expanded(
                               flex: 1,
                               child: SingleChildScrollView(
                                 child: _buildLeftPanel(context, company),
                               ),
                             ),
-                            const SizedBox(width: 20),
+                            const SizedBox(width: 40),
                             // Right login column
                             Expanded(
                               flex: 1,
@@ -261,19 +257,37 @@ class LoginPage extends StatelessWidget {
   ) {
     return Column(
       children: [
-        const SizedBox(height: 24),
+        const SizedBox(height: 32),
+        // Airplane icon in rounded red container
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: Colors.red,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: const Icon(
+            Icons.flight,
+            color: Colors.white,
+            size: 28,
+          ),
+        ),
+        const SizedBox(height: 16),
         Text(
           company['name'] ?? '',
           style: const TextStyle(
             fontSize: 28,
             fontWeight: FontWeight.bold,
-            color: Color(0xFF7F1D1D),
+            color: Color(0xFF1A1A1A),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Text(
           company['tagline'] ?? '',
-          style: const TextStyle(color: Colors.grey),
+          style: const TextStyle(
+            color: Colors.grey,
+            fontSize: 15,
+          ),
         ),
       ],
     );
