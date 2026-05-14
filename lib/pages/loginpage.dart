@@ -100,13 +100,17 @@ class LoginPage extends StatelessWidget {
                             // Left branding column
                             Expanded(
                               flex: 1,
-                              child: _buildLeftPanel(context, company),
+                              child: SingleChildScrollView(
+                                child: _buildLeftPanel(context, company),
+                              ),
                             ),
                             const SizedBox(width: 40),
                             // Right login column
                             Expanded(
                               flex: 1,
-                              child: _buildRightPanel(context, company),
+                              child: SingleChildScrollView(
+                                child: _buildRightPanel(context, company),
+                              ),
                             ),
                           ],
                         );
@@ -116,7 +120,7 @@ class LoginPage extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               _buildMobileHeader(context, company),
-                              const SizedBox(height: 24),
+                              const SizedBox(height: 12),
                               _buildRightPanel(context, company),
                             ],
                           ),
@@ -135,77 +139,115 @@ class LoginPage extends StatelessWidget {
 
   Widget _buildLeftPanel(BuildContext context, Map<String, dynamic> company) {
     final features = (company['features'] as List<dynamic>?) ?? <dynamic>[];
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            company['name'] ?? '',
-            style: const TextStyle(
-              fontSize: 36,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF7F1D1D),
-            ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          company['name'] ?? '',
+          style: const TextStyle(
+            fontSize: 36,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF7F1D1D),
           ),
-          const SizedBox(height: 8),
-          Text(
-            company['tagline'] ?? '',
-            style: const TextStyle(fontSize: 20, color: Colors.grey),
-          ),
-          const SizedBox(height: 24),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: List.generate(
-              features.length,
-              (index) => Row(
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    margin: const EdgeInsets.only(right: 8, bottom: 8),
-                    decoration: const BoxDecoration(
-                      color: Colors.red,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  Text(features[index].toString()),
-                ],
-              ),
-            ),
-          ),
-          const SizedBox(height: 24),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(12),
-            child: Stack(
+        ),
+        const SizedBox(height: 8),
+        Text(
+          company['tagline'] ?? '',
+          style: const TextStyle(fontSize: 20, color: Colors.grey),
+        ),
+        const SizedBox(height: 24),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: List.generate(
+            features.length,
+            (index) => Row(
               children: [
-                ImageWithFallback(
-                  src:
-                      "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1000&q=80",
-                  height: 200,
-                ),
                 Container(
-                  height: 200,
+                  width: 8,
+                  height: 8,
+                  margin: const EdgeInsets.only(right: 8, bottom: 8),
                   decoration: const BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.bottomCenter,
-                      end: Alignment.topCenter,
-                      colors: [Color(0xAA7F1D1D), Colors.transparent],
-                    ),
+                    color: Colors.red,
+                    shape: BoxShape.circle,
                   ),
                 ),
-                const Positioned(
-                  bottom: 8,
-                  left: 8,
-                  child: Text(
-                    "Professional airport ground services",
-                    style: TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                ),
+                Text(features[index].toString()),
               ],
             ),
           ),
-        ],
-      ),
+        ),
+        const SizedBox(height: 24),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Stack(
+            children: [
+              ImageWithFallback(
+                src:
+                    "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=1000&q=80",
+                height: 200,
+              ),
+              Container(
+                height: 200,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [Color(0xAA7F1D1D), Colors.transparent],
+                  ),
+                ),
+              ),
+              const Positioned(
+                bottom: 8,
+                left: 8,
+                child: Text(
+                  "Professional airport ground services",
+                  style: TextStyle(color: Colors.white70, fontSize: 12),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.white.withValues(alpha: 0.8),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.red.shade200),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                "Demo Options: Test different system features",
+                style: TextStyle(fontSize: 14, color: Colors.black87),
+              ),
+              const SizedBox(height: 12),
+              Column(
+                children: [
+                  ElevatedButton(
+                    onPressed: onDemoApproval,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      minimumSize: const Size.fromHeight(40),
+                    ),
+                    child: const Text("Demo Approval Workflow"),
+                  ),
+                  const SizedBox(height: 8),
+                  ElevatedButton(
+                    onPressed: onDemoAdminLogin,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      minimumSize: const Size.fromHeight(40),
+                    ),
+                    child: const Text("Demo Admin Panel"),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -253,9 +295,47 @@ class LoginPage extends StatelessWidget {
 
   Widget _buildRightPanel(BuildContext context, Map<String, dynamic> company) {
     return Column(
-      mainAxisSize: MainAxisSize.min,
       children: [
         LoginForm(onLogin: onLogin),
+        const SizedBox(height: 24),
+        Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFEFF6FF),
+            border: Border.all(color: const Color(0xFFBFDBFE)),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Text(
+                "Demo Instructions",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1E3A8A),
+                  fontSize: 14,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                "• Use any email/password to login as regular user\n"
+                "• Use admin@airport.com to login as admin\n"
+                "• Include 'supervisor' in email for supervisor role\n"
+                "• Click demo buttons to test specific workflows",
+                style: TextStyle(fontSize: 12, color: Color(0xFF1E40AF)),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          "© 2025 ${company['name'] ?? ''}. All rights reserved.",
+          style: const TextStyle(fontSize: 10, color: Colors.grey),
+        ),
+        Text(
+          "For technical support, contact IT services at ${company['contact']?['support'] ?? ''}",
+          style: const TextStyle(fontSize: 10, color: Colors.grey),
+        ),
       ],
     );
   }
