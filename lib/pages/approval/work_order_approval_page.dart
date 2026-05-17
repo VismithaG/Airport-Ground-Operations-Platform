@@ -61,6 +61,7 @@ class _WorkOrderApprovalPageState extends State<WorkOrderApprovalPage> {
             'status': _decision == 'Approve' ? 'Approved' : 'Rejected',
             'supervisorName': _nameCtl.text,
             'decisionComments': _commentsCtl.text,
+            'updatedAt': FieldValue.serverTimestamp(),
           });
     } catch (e) {
       if (mounted) {

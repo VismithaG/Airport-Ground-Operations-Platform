@@ -154,8 +154,10 @@ class _DashboardPageState extends State<DashboardPage> {
             final data = doc.data() as Map<String, dynamic>;
             final status = data['status']?.toString() ?? 'Open';
 
-            if (status == 'Open') open++;
-            if (status == 'Pending Approval') pending++;
+            if (status == 'Open') {
+              open++;
+              pending++; // Open work orders are pending supervisor approval
+            }
 
             DateTime createdAt = now;
             if (data['createdAt'] is Timestamp) {
@@ -172,7 +174,7 @@ class _DashboardPageState extends State<DashboardPage> {
               dueDate = DateTime.tryParse(data['dueDate'].toString());
             }
 
-            if (status == 'Completed') {
+            if (status == 'Approved' || status == 'Completed') {
               DateTime completedDate = createdAt;
               if (data['updatedAt'] is Timestamp) {
                 completedDate = (data['updatedAt'] as Timestamp).toDate();
@@ -188,11 +190,21 @@ class _DashboardPageState extends State<DashboardPage> {
               }
             }
 
-            if (dueDate != null) {
-              final dueDay = DateTime(dueDate.year, dueDate.month, dueDate.day);
+            // Check overdue: use dueDate if available, otherwise fall back to
+            // createdAt (service date) for work orders that haven't been resolved
+            DateTime? overdueCheckDate = dueDate;
+            if (overdueCheckDate == null && status == 'Open') {
+              // If no explicit dueDate, treat the creation/service date as
+              // the implicit due date for open work orders
+              overdueCheckDate = createdAt;
+            }
+            if (overdueCheckDate != null) {
+              final dueDay = DateTime(overdueCheckDate.year, overdueCheckDate.month, overdueCheckDate.day);
               final todayDay = DateTime(now.year, now.month, now.day);
               if (dueDay.isBefore(todayDay) &&
+                  status != 'Approved' &&
                   status != 'Completed' &&
+                  status != 'Rejected' &&
                   status != 'Closed') {
                 overdue++;
               }
