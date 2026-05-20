@@ -374,29 +374,65 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
                         );
 
                         // Save to Firestore First
-                        await FirebaseFirestore.instance
-                            .collection('workOrders')
-                            .doc(_workOrderId)
-                            .set({
-                              'id': _workOrderId,
-                              'title':
-                                  "${_carrierCtl.text} ${_flightNoCtl.text}",
-                              'aircraft': _aircraftType,
-                              'status':
-                                  "Open", // Defaulting to Open instead of Submitted as per usual logic
-                              'priority': _priority,
-                              'createdAt': FieldValue.serverTimestamp(),
-                              'services': _selectedServices.values
-                                  .expand((e) => e)
-                                  .toList(),
-                              'location': _gateCtl.text.isEmpty
-                                  ? 'TBD'
-                                  : _gateCtl.text,
-                              'details': _specialInstructionsCtl.text.isEmpty
-                                  ? 'Service Request'
-                                  : _specialInstructionsCtl.text,
-                              'department': _department,
-                            });
+                        final Map<String, dynamic> baseDoc = {
+                          'id': _workOrderId,
+                          'title': "${_carrierCtl.text} ${_flightNoCtl.text}",
+                          'aircraft': _aircraftType,
+                          'status': "Open",
+                          'priority': _priority,
+                          'createdAt': FieldValue.serverTimestamp(),
+                          'services': _selectedServices.values.expand((e) => e).toList(),
+                          'location': _gateCtl.text.isEmpty ? 'TBD' : _gateCtl.text,
+                          'details': _specialInstructionsCtl.text.isEmpty ? 'Service Request' : _specialInstructionsCtl.text,
+                          'department': _department,
+                          // Flight info fields
+                          'serviceDate': Timestamp.fromDate(_serviceDate),
+                          'scheduledTime': _timeCtl.text,
+                        };
+
+                        // Try to create combined scheduledAt DateTime from serviceDate + scheduledTime
+                        if (_timeCtl.text.isNotEmpty) {
+                          try {
+                            // Expecting format like '1:05 PM' or '12:30 AM'
+                            final timeParts = _timeCtl.text.split(' ');
+                            if (timeParts.length >= 2) {
+                              final hm = timeParts[0].split(':');
+                              int hour = int.parse(hm[0]);
+                              final minute = hm.length > 1 ? int.parse(hm[1]) : 0;
+                              final period = timeParts[1].toUpperCase();
+                              if (period == 'PM' && hour < 12) hour += 12;
+                              if (period == 'AM' && hour == 12) hour = 0;
+                              final scheduledAt = DateTime(
+                                _serviceDate.year,
+                                _serviceDate.month,
+                                _serviceDate.day,
+                                hour,
+                                minute,
+                              );
+                              baseDoc['scheduledAt'] = Timestamp.fromDate(scheduledAt);
+                            }
+                          } catch (e) {
+                            debugPrint('Failed to parse scheduled time: $e');
+                          }
+                        }
+
+                        await FirebaseFirestore.instance.collection('workOrders').doc(_workOrderId).set(baseDoc);
+
+                        // If this is a critical priority work order, create a supervisor notification
+                        if ((_priority ?? '').toLowerCase() == 'critical') {
+                          await FirebaseFirestore.instance
+                              .collection('notifications')
+                              .add({
+                            'title': 'Critical Work Order Created',
+                            'message':
+                                'Work Order #$_workOrderId (${_carrierCtl.text} ${_flightNoCtl.text}) requires immediate attention.',
+                            'workOrderId': _workOrderId,
+                            'priority': 'Critical',
+                            'targetRole': 'Supervisor',
+                            'createdAt': FieldValue.serverTimestamp(),
+                            'read': false,
+                          });
+                        }
 
                         ActivityLogger.logEvent(
                           action: 'Work Order Created',
