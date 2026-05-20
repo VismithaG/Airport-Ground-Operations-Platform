@@ -649,8 +649,8 @@ class _AdminPanelPageState extends State<AdminPanelPage>
               // Table (wide) or horizontally-scrollable table (mobile)
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(minWidth: 900),
+                child: SizedBox(
+                  width: isNarrow ? 900 : constraints.maxWidth,
                   child: DataTable(
                     headingRowColor: MaterialStateProperty.all(Colors.grey[50]),
                     columns: const [
@@ -905,8 +905,8 @@ class _AdminPanelPageState extends State<AdminPanelPage>
               if (!isNarrow)
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(minWidth: 900),
+                  child: SizedBox(
+                    width: isNarrow ? 900 : constraints.maxWidth,
                     child: DataTable(
                       headingRowColor: MaterialStateProperty.all(
                         Colors.grey[50],
