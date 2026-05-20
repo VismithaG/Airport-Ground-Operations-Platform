@@ -62,6 +62,99 @@ class ApprovalListPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Show a critical notification banner if there are critical pending WOs
+                Builder(builder: (ctx) {
+                  final criticalCount = pendingDocs.where((doc) {
+                    final d = doc.data() as Map<String, dynamic>;
+                    return (d['priority']?.toString().toLowerCase() == 'critical') && (d['status'] == 'Open');
+                  }).length;
+
+                  if (criticalCount > 0) {
+                    return Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        border: Border.all(color: Colors.red.shade200),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.warning_amber_rounded, color: Colors.red.shade700),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              '$criticalCount critical work order(s) require immediate attention.',
+                              style: TextStyle(color: Colors.red.shade800, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              final criticalDocs = pendingDocs.where((doc) {
+                                final d = doc.data() as Map<String, dynamic>;
+                                return d['priority']?.toString().toLowerCase() == 'critical';
+                              }).toList();
+
+                              showDialog(
+                                context: ctx,
+                                builder: (dialogCtx) {
+                                  return AlertDialog(
+                                    title: const Text('Critical Work Orders'),
+                                    content: Container(
+                                      width: double.maxFinite,
+                                      constraints: const BoxConstraints(maxHeight: 400),
+                                      child: ListView.separated(
+                                        shrinkWrap: true,
+                                        itemCount: criticalDocs.length,
+                                        separatorBuilder: (_, __) => const Divider(),
+                                        itemBuilder: (dCtx, i) {
+                                          final doc = criticalDocs[i];
+                                          final data = doc.data() as Map<String, dynamic>;
+                                          final id = data['id']?.toString() ?? doc.id;
+                                          final title = data['title']?.toString() ?? 'Untitled';
+                                          return ListTile(
+                                            tileColor: Colors.red.shade50,
+                                            leading: Icon(Icons.warning_amber_rounded, color: Colors.red.shade700),
+                                            title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                            subtitle: Text(id),
+                                            trailing: ElevatedButton(
+                                              style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade700),
+                                              onPressed: () {
+                                                Navigator.of(dialogCtx).pop();
+                                                Navigator.push(
+                                                  context,
+                                                  MaterialPageRoute(
+                                                    builder: (context) => WorkOrderApprovalPage(
+                                                      workOrderId: id,
+                                                      currentUser: currentUser,
+                                                      workOrderData: data,
+                                                    ),
+                                                  ),
+                                                );
+                                              },
+                                              child: const Text('Review'),
+                                            ),
+                                          );
+                                        },
+                                      ),
+                                    ),
+                                    actions: [
+                                      TextButton(onPressed: () => Navigator.of(dialogCtx).pop(), child: const Text('Close')),
+                                    ],
+                                  );
+                                },
+                              );
+                            },
+                            child: const Text('View'),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+
+                  return const SizedBox.shrink();
+                }),
+
                 const Text(
                   "Pending Approvals",
                   style: TextStyle(

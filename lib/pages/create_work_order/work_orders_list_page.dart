@@ -16,6 +16,8 @@ class WorkOrder {
   final String priority;
   final DateTime createdAt;
   final DateTime? dueDate;
+  final DateTime? serviceDate;
+  final String? scheduledTime;
   final List<String> services;
 
   WorkOrder({
@@ -28,6 +30,8 @@ class WorkOrder {
     this.priority = 'Medium',
     required this.createdAt,
     this.dueDate,
+    this.serviceDate,
+    this.scheduledTime,
     required this.services,
   });
 }
@@ -105,8 +109,41 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
                   if (data['createdAt'] is Timestamp) {
                     parsedDate = (data['createdAt'] as Timestamp).toDate();
                   } else if (data['createdAt'] is String) {
-                    parsedDate =
-                        DateTime.tryParse(data['createdAt']) ?? DateTime.now();
+                    parsedDate = DateTime.tryParse(data['createdAt']) ?? DateTime.now();
+                  }
+
+                  // Determine dueDate: prefer explicit scheduledAt, otherwise try to combine serviceDate + scheduledTime
+                  DateTime? dueDate;
+                  DateTime? serviceDate;
+                  String? scheduledTime;
+
+                  if (data['scheduledAt'] is Timestamp) {
+                    dueDate = (data['scheduledAt'] as Timestamp).toDate();
+                  }
+
+                  if (data['serviceDate'] is Timestamp) {
+                    serviceDate = (data['serviceDate'] as Timestamp).toDate();
+                  }
+
+                  if (data['scheduledTime'] != null) {
+                    scheduledTime = data['scheduledTime'].toString();
+                    // If we don't have scheduledAt but have serviceDate + scheduledTime, try to build it
+                    if (dueDate == null && serviceDate != null && scheduledTime.isNotEmpty) {
+                      try {
+                        final timeParts = scheduledTime.split(' ');
+                        if (timeParts.length >= 2) {
+                          final hm = timeParts[0].split(':');
+                          int hour = int.parse(hm[0]);
+                          final minute = hm.length > 1 ? int.parse(hm[1]) : 0;
+                          final period = timeParts[1].toUpperCase();
+                          if (period == 'PM' && hour < 12) hour += 12;
+                          if (period == 'AM' && hour == 12) hour = 0;
+                          dueDate = DateTime(serviceDate.year, serviceDate.month, serviceDate.day, hour, minute);
+                        }
+                      } catch (e) {
+                        debugPrint('Failed to parse scheduledTime from doc ${doc.id}: $e');
+                      }
+                    }
                   }
 
                   return WorkOrder(
@@ -118,6 +155,9 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
                     status: data['status']?.toString() ?? 'Open',
                     priority: data['priority']?.toString() ?? 'Medium',
                     createdAt: parsedDate,
+                    dueDate: dueDate,
+                    serviceDate: serviceDate,
+                    scheduledTime: scheduledTime,
                     services: List<String>.from(data['services'] ?? []),
                   );
                 }).toList();
@@ -458,9 +498,25 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
           // ID
           SizedBox(
             width: 100,
-            child: Text(
-              wo.id,
-              style: const TextStyle(fontWeight: FontWeight.w500),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    wo.id,
+                    style: const TextStyle(fontWeight: FontWeight.w500),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (wo.priority.toLowerCase() == 'critical')
+                  Padding(
+                    padding: const EdgeInsets.only(left: 6.0),
+                    child: Tooltip(
+                      message: 'Critical priority',
+                      child: Icon(Icons.warning_amber_rounded,
+                          size: 16, color: Colors.red.shade700),
+                    ),
+                  ),
+              ],
             ),
           ),
 
@@ -625,8 +681,12 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
                                   'Created: ${wo.createdAt.day}-${_getMonth(wo.createdAt.month)}-${wo.createdAt.year} ${wo.createdAt.hour.toString().padLeft(2, '0')}:${wo.createdAt.minute.toString().padLeft(2, '0')}',
                                 ),
                                 const SizedBox(height: 8),
+                                Text('Service Date: ${wo.serviceDate != null ? '${wo.serviceDate!.day}-${_getMonth(wo.serviceDate!.month)}-${wo.serviceDate!.year}' : 'N/A'}'),
+                                const SizedBox(height: 8),
+                                Text('Scheduled Time: ${wo.scheduledTime ?? 'N/A'}'),
+                                const SizedBox(height: 8),
                                 Text(
-                                  'Due Date: ${wo.dueDate != null ? '${wo.dueDate!.day}-${_getMonth(wo.dueDate!.month)}-${wo.dueDate!.year}' : 'N/A'}',
+                                  'Due Date: ${wo.dueDate != null ? '${wo.dueDate!.day}-${_getMonth(wo.dueDate!.month)}-${wo.dueDate!.year} ${wo.dueDate!.hour.toString().padLeft(2, '0')}:${wo.dueDate!.minute.toString().padLeft(2, '0')}' : 'N/A'}',
                                 ),
                                 const SizedBox(height: 12),
                                 const Text('Services:', style: TextStyle(fontWeight: FontWeight.bold)),
