@@ -47,10 +47,12 @@ class ApprovalListPage extends StatelessWidget {
             final bData = b.data() as Map<String, dynamic>;
             DateTime aTime = DateTime.now();
             DateTime bTime = DateTime.now();
-            if (aData['createdAt'] is Timestamp)
+            if (aData['createdAt'] is Timestamp) {
               aTime = (aData['createdAt'] as Timestamp).toDate();
-            if (bData['createdAt'] is Timestamp)
+            }
+            if (bData['createdAt'] is Timestamp) {
               bTime = (bData['createdAt'] as Timestamp).toDate();
+            }
             return bTime.compareTo(aTime);
           }
 
@@ -106,7 +108,7 @@ class ApprovalListPage extends StatelessWidget {
                                       child: ListView.separated(
                                         shrinkWrap: true,
                                         itemCount: criticalDocs.length,
-                                        separatorBuilder: (_, __) => const Divider(),
+                                        separatorBuilder: (context, index) => const Divider(),
                                         itemBuilder: (dCtx, i) {
                                           final doc = criticalDocs[i];
                                           final data = doc.data() as Map<String, dynamic>;
@@ -120,6 +122,9 @@ class ApprovalListPage extends StatelessWidget {
                                             trailing: ElevatedButton(
                                               style: ElevatedButton.styleFrom(backgroundColor: Colors.red.shade700),
                                               onPressed: () {
+                                                // Close the dialog then navigate immediately to avoid using
+                                                // the build context across async gaps. Marking notifications
+                                                // as read is performed asynchronously afterwards.
                                                 Navigator.of(dialogCtx).pop();
                                                 Navigator.push(
                                                   context,
@@ -131,6 +136,24 @@ class ApprovalListPage extends StatelessWidget {
                                                     ),
                                                   ),
                                                 );
+
+                                                // Mark any related supervisor notifications as read (async, no context use)
+                                                FirebaseFirestore.instance
+                                                    .collection('notifications')
+                                                    .where('workOrderId', isEqualTo: id)
+                                                    .where('targetRole', isEqualTo: 'Supervisor')
+                                                    .where('read', isEqualTo: false)
+                                                    .get()
+                                                    .then((snap) {
+                                                  for (final n in snap.docs) {
+                                                    n.reference.update({
+                                                      'read': true,
+                                                      'readAt': FieldValue.serverTimestamp(),
+                                                    });
+                                                  }
+                                                }).catchError((e) {
+                                                  debugPrint('Failed to mark notifications read: $e');
+                                                });
                                               },
                                               child: const Text('Review'),
                                             ),
