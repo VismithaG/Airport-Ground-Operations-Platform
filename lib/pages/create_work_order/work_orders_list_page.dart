@@ -591,11 +591,65 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.remove_red_eye_outlined,
-                  size: 18,
-                  color: Colors.yellow[700],
-                ), // Yellow Eye
+                // Eye button: shows details dialog
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(),
+                  icon: Icon(
+                    Icons.remove_red_eye_outlined,
+                    size: 18,
+                    color: Colors.yellow[700],
+                  ),
+                  tooltip: 'View details',
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) {
+                        return AlertDialog(
+                          title: Text('Work Order ${wo.id}'),
+                          content: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Title: ${wo.title}'),
+                                const SizedBox(height: 8),
+                                Text('Aircraft / Flight: ${wo.aircraft}'),
+                                const SizedBox(height: 8),
+                                Text('Priority: ${wo.priority}'),
+                                const SizedBox(height: 8),
+                                Text('Status: ${wo.status}'),
+                                const SizedBox(height: 8),
+                                Text('Location: ${wo.location}'),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Created: ${wo.createdAt.day}-${_getMonth(wo.createdAt.month)}-${wo.createdAt.year} ${wo.createdAt.hour.toString().padLeft(2, '0')}:${wo.createdAt.minute.toString().padLeft(2, '0')}',
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Due Date: ${wo.dueDate != null ? '${wo.dueDate!.day}-${_getMonth(wo.dueDate!.month)}-${wo.dueDate!.year}' : 'N/A'}',
+                                ),
+                                const SizedBox(height: 12),
+                                const Text('Services:', style: TextStyle(fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 6),
+                                ...wo.services.map((s) => Text('- $s')).toList(),
+                                const SizedBox(height: 12),
+                                const Text('Details:', style: TextStyle(fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 6),
+                                Text(wo.details),
+                              ],
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(ctx).pop(),
+                              child: const Text('Close'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
                 const SizedBox(width: 8),
                 const Icon(
                   Icons.edit_outlined,
