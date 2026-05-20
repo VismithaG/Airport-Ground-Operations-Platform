@@ -96,6 +96,9 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
 
     // Constrain the card height so inner Expanded/Scroll has bounded height
     final double maxCardHeight = MediaQuery.of(context).size.height * 0.9;
+    final double horizontalMargin = 16.0;
+    final double availableWidth = MediaQuery.of(context).size.width - (horizontalMargin * 2);
+    final double cardWidth = availableWidth < 600 ? availableWidth : 600;
 
     return Scaffold(
       backgroundColor: Colors.black.withAlpha(
@@ -103,11 +106,11 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
       ), // Light grey background like Figma
       body: Center(
         child: Container(
+          width: cardWidth,
           constraints: BoxConstraints(
-            maxWidth: 600,
             maxHeight: maxCardHeight,
           ), // Constrain width/height for "Page" look
-          margin: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+          margin: EdgeInsets.symmetric(vertical: 24, horizontal: horizontalMargin),
           decoration: BoxDecoration(
             color: Colors.white,
             borderRadius: BorderRadius.circular(16),
@@ -281,7 +284,9 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
               firstDate: DateTime.now(),
               lastDate: DateTime(2030),
             );
-            if (d != null) setState(() => _serviceDate = d);
+            if (d != null) {
+              setState(() => _serviceDate = d);
+            }
           },
           onPickTime: () async {
             final t = await showTimePicker(
@@ -314,8 +319,9 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
           onToggle: (cat, service, val) {
             setState(() {
               if (val) {
-                if (!_selectedServices[cat]!.contains(service))
+                if (!_selectedServices[cat]!.contains(service)) {
                   _selectedServices[cat]!.add(service);
+                }
               } else {
                 _selectedServices[cat]!.remove(service);
                 _quantities.remove(service);
@@ -343,154 +349,167 @@ class _CreateWorkOrderPageState extends State<CreateWorkOrderPage> {
   Widget _buildFooterActions() {
     return Padding(
       padding: const EdgeInsets.all(20),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      child: Wrap(
+        spacing: 12,
+        runSpacing: 8,
+        alignment: WrapAlignment.spaceBetween,
         children: [
-          if (_currentStep == 1)
-            TextButton(
-              onPressed: widget.onBack,
-              child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
-            )
-          else
-            OutlinedButton(
-              onPressed: () => setState(() => _currentStep--),
-              style: OutlinedButton.styleFrom(foregroundColor: Colors.black87),
-              child: const Text("Back"),
-            ),
+          SizedBox(
+            // ensure the button doesn't expand beyond available width
+            width: MediaQuery.of(context).size.width < 420 ? MediaQuery.of(context).size.width * 0.45 : 160,
+            child: _currentStep == 1
+                ? TextButton(
+                    onPressed: widget.onBack,
+                    child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+                  )
+                : OutlinedButton(
+                    onPressed: () => setState(() => _currentStep--),
+                    style: OutlinedButton.styleFrom(foregroundColor: Colors.black87),
+                    child: const Text("Back"),
+                  ),
+          ),
 
-          ElevatedButton(
-            onPressed: _isSubmitting
-                ? null
-                : () async {
-                    if (_currentStep < 3) {
-                      setState(() => _currentStep++);
-                    } else {
-                      setState(() => _isSubmitting = true);
+          SizedBox(
+            width: MediaQuery.of(context).size.width < 420 ? MediaQuery.of(context).size.width * 0.45 : 220,
+            child: ElevatedButton(
+              onPressed: _isSubmitting
+                  ? null
+                  : () async {
+                      if (_currentStep < 3) {
+                        setState(() => _currentStep++);
+                      } else {
+                        setState(() => _isSubmitting = true);
 
-                      try {
-                        // Force refresh the auth token so new claims (like 'authorized') are respected instantly
-                        await FirebaseAuth.instance.currentUser?.getIdToken(
-                          true,
-                        );
+                        try {
+                          // Force refresh the auth token so new claims (like 'authorized') are respected instantly
+                          await FirebaseAuth.instance.currentUser?.getIdToken(
+                            true,
+                          );
 
-                        // Save to Firestore First
-                        final Map<String, dynamic> baseDoc = {
-                          'id': _workOrderId,
-                          'title': "${_carrierCtl.text} ${_flightNoCtl.text}",
-                          'aircraft': _aircraftType,
-                          'status': "Open",
-                          'priority': _priority,
-                          'createdAt': FieldValue.serverTimestamp(),
-                          'services': _selectedServices.values.expand((e) => e).toList(),
-                          'location': _gateCtl.text.isEmpty ? 'TBD' : _gateCtl.text,
-                          'details': _specialInstructionsCtl.text.isEmpty ? 'Service Request' : _specialInstructionsCtl.text,
-                          'department': _department,
-                          // Flight info fields
-                          'serviceDate': Timestamp.fromDate(_serviceDate),
-                          'scheduledTime': _timeCtl.text,
-                        };
+                          // Save to Firestore First
+                          final String creatorEmail = FirebaseAuth.instance.currentUser?.email ?? widget.currentUser?.email ?? _contactCtl.text;
+                          final String? creatorUid = FirebaseAuth.instance.currentUser?.uid;
 
-                        // Try to create combined scheduledAt DateTime from serviceDate + scheduledTime
-                        if (_timeCtl.text.isNotEmpty) {
-                          try {
-                            // Expecting format like '1:05 PM' or '12:30 AM'
-                            final timeParts = _timeCtl.text.split(' ');
-                            if (timeParts.length >= 2) {
-                              final hm = timeParts[0].split(':');
-                              int hour = int.parse(hm[0]);
-                              final minute = hm.length > 1 ? int.parse(hm[1]) : 0;
-                              final period = timeParts[1].toUpperCase();
-                              if (period == 'PM' && hour < 12) hour += 12;
-                              if (period == 'AM' && hour == 12) hour = 0;
-                              final scheduledAt = DateTime(
-                                _serviceDate.year,
-                                _serviceDate.month,
-                                _serviceDate.day,
-                                hour,
-                                minute,
-                              );
-                              baseDoc['scheduledAt'] = Timestamp.fromDate(scheduledAt);
+                          final Map<String, dynamic> baseDoc = {
+                            'id': _workOrderId,
+                            'title': "${_carrierCtl.text} ${_flightNoCtl.text}",
+                            'aircraft': _aircraftType,
+                            'status': "Open",
+                            'priority': _priority,
+                            'createdAt': FieldValue.serverTimestamp(),
+                            'services': _selectedServices.values.expand((e) => e).toList(),
+                            'location': _gateCtl.text.isEmpty ? 'TBD' : _gateCtl.text,
+                            'details': _specialInstructionsCtl.text.isEmpty ? 'Service Request' : _specialInstructionsCtl.text,
+                            'department': _department,
+                            'createdBy': creatorEmail,
+                            'createdByUid': creatorUid,
+                            // Flight info fields
+                            'serviceDate': Timestamp.fromDate(_serviceDate),
+                            'scheduledTime': _timeCtl.text,
+                          };
+
+                          // Try to create combined scheduledAt DateTime from serviceDate + scheduledTime
+                          if (_timeCtl.text.isNotEmpty) {
+                            try {
+                              // Expecting format like '1:05 PM' or '12:30 AM'
+                              final timeParts = _timeCtl.text.split(' ');
+                              if (timeParts.length >= 2) {
+                                final hm = timeParts[0].split(':');
+                                int hour = int.parse(hm[0]);
+                                final minute = hm.length > 1 ? int.parse(hm[1]) : 0;
+                                final period = timeParts[1].toUpperCase();
+                                if (period == 'PM' && hour < 12) hour += 12;
+                                if (period == 'AM' && hour == 12) hour = 0;
+                                final scheduledAt = DateTime(
+                                  _serviceDate.year,
+                                  _serviceDate.month,
+                                  _serviceDate.day,
+                                  hour,
+                                  minute,
+                                );
+                                baseDoc['scheduledAt'] = Timestamp.fromDate(scheduledAt);
+                              }
+                            } catch (e) {
+                              debugPrint('Failed to parse scheduled time: $e');
                             }
-                          } catch (e) {
-                            debugPrint('Failed to parse scheduled time: $e');
+                          }
+
+                          await FirebaseFirestore.instance.collection('workOrders').doc(_workOrderId).set(baseDoc);
+
+                          // If this is a critical work order, create a supervisor notification
+                          if (_priority.toLowerCase() == 'critical') {
+                            await FirebaseFirestore.instance
+                                .collection('notifications')
+                                .add({
+                              'title': 'Critical Work Order Created',
+                              'message':
+                                  'Work Order #$_workOrderId (${_carrierCtl.text} ${_flightNoCtl.text}) requires immediate attention.',
+                              'workOrderId': _workOrderId,
+                              'priority': 'Critical',
+                              'targetRole': 'Supervisor',
+                              'createdAt': FieldValue.serverTimestamp(),
+                              'read': false,
+                            });
+                          }
+
+                          ActivityLogger.logEvent(
+                            action: 'Work Order Created',
+                            user:
+                                widget.currentUser?.name ?? _requestedByCtl.text,
+                            details:
+                                'Created Work Order #$_workOrderId for ${_carrierCtl.text} ${_flightNoCtl.text}',
+                            severity: 'Info',
+                          );
+
+                          if (mounted) {
+                            setState(() {
+                              _isSubmitting = false;
+                              _isSubmitted = true;
+                            });
+                            widget.onSave(
+                              WorkOrder(
+                                id: _workOrderId,
+                                title: "${_carrierCtl.text} ${_flightNoCtl.text}",
+                                aircraft: _aircraftType,
+                                status: "Open",
+                                priority: _priority,
+                                createdAt: DateTime.now(),
+                                services: _selectedServices.values
+                                    .expand((e) => e)
+                                    .toList(),
+                              ),
+                            );
+                          }
+                        } catch (e) {
+                          debugPrint('Submission error: $e');
+                          if (mounted) {
+                            setState(() => _isSubmitting = false);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('Failed to submit: $e'),
+                                backgroundColor: Colors.red,
+                              ),
+                            );
                           }
                         }
-
-                        await FirebaseFirestore.instance.collection('workOrders').doc(_workOrderId).set(baseDoc);
-
-                        // If this is a critical priority work order, create a supervisor notification
-                        if ((_priority ?? '').toLowerCase() == 'critical') {
-                          await FirebaseFirestore.instance
-                              .collection('notifications')
-                              .add({
-                            'title': 'Critical Work Order Created',
-                            'message':
-                                'Work Order #$_workOrderId (${_carrierCtl.text} ${_flightNoCtl.text}) requires immediate attention.',
-                            'workOrderId': _workOrderId,
-                            'priority': 'Critical',
-                            'targetRole': 'Supervisor',
-                            'createdAt': FieldValue.serverTimestamp(),
-                            'read': false,
-                          });
-                        }
-
-                        ActivityLogger.logEvent(
-                          action: 'Work Order Created',
-                          user:
-                              widget.currentUser?.name ?? _requestedByCtl.text,
-                          details:
-                              'Created Work Order #$_workOrderId for ${_carrierCtl.text} ${_flightNoCtl.text}',
-                          severity: 'Info',
-                        );
-
-                        if (mounted) {
-                          setState(() {
-                            _isSubmitting = false;
-                            _isSubmitted = true;
-                          });
-                          widget.onSave(
-                            WorkOrder(
-                              id: _workOrderId,
-                              title: "${_carrierCtl.text} ${_flightNoCtl.text}",
-                              aircraft: _aircraftType,
-                              status: "Open",
-                              priority: _priority,
-                              createdAt: DateTime.now(),
-                              services: _selectedServices.values
-                                  .expand((e) => e)
-                                  .toList(),
-                            ),
-                          );
-                        }
-                      } catch (e) {
-                        debugPrint('Submission error: $e');
-                        if (mounted) {
-                          setState(() => _isSubmitting = false);
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Failed to submit: $e'),
-                              backgroundColor: Colors.red,
-                            ),
-                          );
-                        }
                       }
-                    }
-                  },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFB71C1C),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFB71C1C),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              ),
+              child: _isSubmitting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : Text(_currentStep == 3 ? "Submit Work Order" : "Continue"),
             ),
-            child: _isSubmitting
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                : Text(_currentStep == 3 ? "Submit Work Order" : "Continue"),
           ),
         ],
       ),

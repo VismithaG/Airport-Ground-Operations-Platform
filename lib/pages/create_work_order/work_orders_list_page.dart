@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 // Import your create page to navigate to it
 import 'create_work_order_page.dart';
 import '../dashboard.dart'; // Import UserInfo
+// FirebaseAuth not required here; UserInfo is provided via dashboard.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 // -------------------- Model --------------------
@@ -18,6 +19,7 @@ class WorkOrder {
   final DateTime? dueDate;
   final DateTime? serviceDate;
   final String? scheduledTime;
+  final String? createdBy;
   final List<String> services;
 
   WorkOrder({
@@ -32,6 +34,7 @@ class WorkOrder {
     this.dueDate,
     this.serviceDate,
     this.scheduledTime,
+    this.createdBy,
     required this.services,
   });
 }
@@ -52,8 +55,6 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
   String _searchQuery = '';
   String _selectedStatus = 'All Statuses';
   String _selectedPriority = 'All Priorities';
-
-  // 2. Mock Data removed (using Firestore directly in StreamBuilder now)
 
   void _navigateToCreate() {
     Navigator.push(
@@ -90,9 +91,7 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
 
             // Firestore Data Stream + Table
             StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('workOrders')
-                  .snapshots(),
+              stream: FirebaseFirestore.instance.collection('workOrders').snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Padding(
@@ -104,7 +103,11 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
                 final docs = snapshot.hasData ? snapshot.data!.docs : [];
 
                 List<WorkOrder> allWorkOrders = docs.map((doc) {
-                  final data = doc.data() as Map<String, dynamic>;
+                  final raw = doc.data();
+                  final Map<String, dynamic> data = raw is Map<String, dynamic>
+                      ? raw
+                      : (raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{});
+
                   DateTime parsedDate = DateTime.now();
                   if (data['createdAt'] is Timestamp) {
                     parsedDate = (data['createdAt'] as Timestamp).toDate();
@@ -123,63 +126,112 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
 
                   if (data['serviceDate'] is Timestamp) {
                     serviceDate = (data['serviceDate'] as Timestamp).toDate();
+                  } else if (data['serviceDate'] is String) {
+                    serviceDate = DateTime.tryParse(data['serviceDate']);
                   }
 
                   if (data['scheduledTime'] != null) {
                     scheduledTime = data['scheduledTime'].toString();
-                    // If we don't have scheduledAt but have serviceDate + scheduledTime, try to build it
-                    if (dueDate == null && serviceDate != null && scheduledTime.isNotEmpty) {
-                      try {
-                        final timeParts = scheduledTime.split(' ');
-                        if (timeParts.length >= 2) {
-                          final hm = timeParts[0].split(':');
-                          int hour = int.parse(hm[0]);
-                          final minute = hm.length > 1 ? int.parse(hm[1]) : 0;
-                          final period = timeParts[1].toUpperCase();
-                          if (period == 'PM' && hour < 12) hour += 12;
-                          if (period == 'AM' && hour == 12) hour = 0;
-                          dueDate = DateTime(serviceDate.year, serviceDate.month, serviceDate.day, hour, minute);
+                  }
+
+                  if (dueDate == null && serviceDate != null && scheduledTime != null && scheduledTime.isNotEmpty) {
+                    try {
+                      final timeParts = scheduledTime.split(' ');
+                      if (timeParts.length >= 2) {
+                        final hm = timeParts[0].split(':');
+                        int hour = int.parse(hm[0]);
+                        final minute = hm.length > 1 ? int.parse(hm[1]) : 0;
+                        final period = timeParts[1].toUpperCase();
+                        if (period == 'PM' && hour < 12) {
+                          hour += 12;
                         }
-                      } catch (e) {
-                        debugPrint('Failed to parse scheduledTime from doc ${doc.id}: $e');
+                        if (period == 'AM' && hour == 12) {
+                          hour = 0;
+                        }
+                        dueDate = DateTime(serviceDate.year, serviceDate.month, serviceDate.day, hour, minute);
+                      }
+                    } catch (e) {
+                      debugPrint('Failed to parse scheduledTime from doc ${doc.id}: $e');
+                    }
+                  }
+
+                  // Robust services extraction (handles List, Map, and categorized maps)
+                  List<String> services = [];
+                  final rawServices = data['services'];
+                  if (rawServices is List) {
+                    services = rawServices.map((e) => e?.toString() ?? '').where((s) => s.isNotEmpty).toList();
+                  } else if (rawServices is Map) {
+                    rawServices.forEach((k, v) {
+                      if (v is List) {
+                        services.addAll(v.map((e) => e.toString()));
+                      } else if (v != null) {
+                        services.add(v.toString());
+                      }
+                    });
+                  } else {
+                    // try known category keys
+                    const List<String> categories = [
+                      'specialPassengerServices',
+                      'groundSupportServices',
+                      'baggageServices',
+                      'facilityServices',
+                      'selectedServices',
+                    ];
+                    for (final key in categories) {
+                      final r = data[key];
+                      if (r is List) {
+                        services.addAll(r.map((e) => e.toString()));
+                      } else if (r is Map) {
+                        r.forEach((k, v) {
+                          if (v is List) {
+                            services.addAll(v.map((e) => e.toString()));
+                          } else if (v != null) {
+                            services.add(v.toString());
+                          }
+                        });
                       }
                     }
                   }
 
+                  // Determine display title with fallbacks
+                  String title = '';
+                  if (data['title'] != null && data['title'].toString().trim().isNotEmpty) {
+                    title = data['title'].toString();
+                  } else if ((data['carrier'] != null || data['flightNo'] != null) && ((data['carrier']?.toString().isNotEmpty ?? false) || (data['flightNo']?.toString().isNotEmpty ?? false))) {
+                    title = '${data['carrier'] ?? ''} ${data['flightNo'] ?? ''}'.trim();
+                  } else if (data['flightNumber'] != null) {
+                    title = data['flightNumber'].toString();
+                  } else if (data['flightNo'] != null) {
+                    title = data['flightNo'].toString();
+                  } else {
+                    title = data['aircraft']?.toString() ?? 'Unknown';
+                  }
+
                   return WorkOrder(
                     id: data['id']?.toString() ?? doc.id,
-                    title: data['title']?.toString() ?? 'Unknown',
-                    details: data['details']?.toString() ?? 'Service Request',
-                    location: data['location']?.toString() ?? 'TBD',
-                    aircraft: data['aircraft']?.toString() ?? 'Unknown',
+                    title: title,
+                    details: data['details']?.toString() ?? data['description']?.toString() ?? 'Service Request',
+                    location: data['location']?.toString() ?? data['gate']?.toString() ?? 'TBD',
+                    aircraft: data['aircraft']?.toString() ?? data['aircraftType']?.toString() ?? 'Unknown',
                     status: data['status']?.toString() ?? 'Open',
                     priority: data['priority']?.toString() ?? 'Medium',
                     createdAt: parsedDate,
                     dueDate: dueDate,
                     serviceDate: serviceDate,
                     scheduledTime: scheduledTime,
-                    services: List<String>.from(data['services'] ?? []),
+                    createdBy: data['createdBy']?.toString(),
+                    services: services,
                   );
                 }).toList();
 
                 // Locally sort by created descending
-                allWorkOrders.sort(
-                  (a, b) => b.createdAt.compareTo(a.createdAt),
-                );
+                allWorkOrders.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
                 // Filter Logic
                 List<WorkOrder> filteredOrders = allWorkOrders.where((wo) {
-                  final matchesSearch =
-                      wo.title.toLowerCase().contains(
-                        _searchQuery.toLowerCase(),
-                      ) ||
-                      wo.id.toLowerCase().contains(_searchQuery.toLowerCase());
-                  final matchesStatus =
-                      _selectedStatus == 'All Statuses' ||
-                      wo.status == _selectedStatus;
-                  final matchesPriority =
-                      _selectedPriority == 'All Priorities' ||
-                      wo.priority == _selectedPriority;
+                  final matchesSearch = wo.title.toLowerCase().contains(_searchQuery.toLowerCase()) || wo.id.toLowerCase().contains(_searchQuery.toLowerCase());
+                  final matchesStatus = _selectedStatus == 'All Statuses' || wo.status == _selectedStatus;
+                  final matchesPriority = _selectedPriority == 'All Priorities' || wo.priority == _selectedPriority;
                   return matchesSearch && matchesStatus && matchesPriority;
                 }).toList();
 
@@ -196,63 +248,82 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
                     ),
                     const SizedBox(height: 10),
 
-                    // Table Layout Wrapper for Horizontal Scrolling
-                    LayoutBuilder(
-                      builder: (context, constraints) {
-                        const double minTableWidth = 1200.0;
-                        final double tableWidth =
-                            constraints.maxWidth > minTableWidth
-                            ? constraints.maxWidth
-                            : minTableWidth;
+                    // Responsive layout: show a compact mobile list for narrow screens
+                    Builder(builder: (ctx) {
+                      final bool isMobile = MediaQuery.of(ctx).size.width < 720;
+                      if (isMobile) {
+                        if (filteredOrders.isEmpty) {
+                          return const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 40.0),
+                            child: Center(
+                              child: Text(
+                                "No data is present",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Colors.grey,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          );
+                        }
 
-                        return SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: SizedBox(
-                            width: tableWidth,
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.stretch,
-                              children: [
-                                // Table Header
-                                _buildTableHeader(),
-                                const Divider(),
+                        return ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: filteredOrders.length,
+                          separatorBuilder: (context, index) => const Divider(height: 1),
+                          itemBuilder: (context, index) => _buildWorkOrderRow(filteredOrders[index]),
+                        );
+                      }
 
-                                // Data List
-                                if (filteredOrders.isEmpty)
-                                  const Padding(
-                                    padding: EdgeInsets.symmetric(
-                                      vertical: 40.0,
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        "No data is present",
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          color: Colors.grey,
-                                          fontWeight: FontWeight.w500,
+                      // Desktop / wide layout: table with horizontal scroll when needed
+                      return LayoutBuilder(
+                        builder: (context, constraints) {
+                          const double minTableWidth = 1200.0;
+                          final double tableWidth = constraints.maxWidth > minTableWidth ? constraints.maxWidth : minTableWidth;
+
+                          return SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: SizedBox(
+                              width: tableWidth,
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  // Table Header
+                                  _buildTableHeader(),
+                                  const Divider(),
+
+                                  // Data List
+                                  if (filteredOrders.isEmpty)
+                                    const Padding(
+                                      padding: EdgeInsets.symmetric(vertical: 40.0),
+                                      child: Center(
+                                        child: Text(
+                                          "No data is present",
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.grey,
+                                            fontWeight: FontWeight.w500,
+                                          ),
                                         ),
                                       ),
+                                    )
+                                  else
+                                    ListView.separated(
+                                      shrinkWrap: true,
+                                      physics: const NeverScrollableScrollPhysics(),
+                                      itemCount: filteredOrders.length,
+                                      separatorBuilder: (context, index) => const Divider(height: 1),
+                                      itemBuilder: (context, index) => _buildWorkOrderRow(filteredOrders[index]),
                                     ),
-                                  )
-                                else
-                                  ListView.separated(
-                                    shrinkWrap: true,
-                                    physics:
-                                        const NeverScrollableScrollPhysics(),
-                                    itemCount: filteredOrders.length,
-                                    separatorBuilder: (context, index) =>
-                                        const Divider(height: 1),
-                                    itemBuilder: (context, index) {
-                                      return _buildWorkOrderRow(
-                                        filteredOrders[index],
-                                      );
-                                    },
-                                  ),
-                              ],
+                                ],
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                    ),
+                          );
+                        },
+                      );
+                    }),
                   ],
                 );
               },
@@ -490,6 +561,107 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
   }
 
   Widget _buildWorkOrderRow(WorkOrder wo) {
+    final double w = MediaQuery.of(context).size.width;
+    if (w < 720) {
+      // Compact mobile layout to avoid horizontal overflow
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(wo.id, style: const TextStyle(fontWeight: FontWeight.w600)),
+                          if (wo.priority.toLowerCase() == 'critical') ...[
+                            const SizedBox(width: 6),
+                            Icon(Icons.warning_amber_rounded, size: 16, color: Colors.red.shade700),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(wo.title, style: const TextStyle(fontWeight: FontWeight.bold)),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  padding: EdgeInsets.zero,
+                  constraints: BoxConstraints.tightFor(width: 36, height: 36),
+                  icon: Icon(Icons.remove_red_eye_outlined, size: 20, color: Colors.yellow[700]),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) {
+                        return AlertDialog(
+                          title: Text('Work Order ${wo.id}'),
+                          content: SingleChildScrollView(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Title: ${wo.title}'),
+                                const SizedBox(height: 8),
+                                Text('Aircraft / Flight: ${wo.aircraft}'),
+                                const SizedBox(height: 8),
+                                Text('Priority: ${wo.priority}'),
+                                const SizedBox(height: 8),
+                                Text('Status: ${wo.status}'),
+                                const SizedBox(height: 8),
+                                Text('Location: ${wo.location}'),
+                                const SizedBox(height: 8),
+                                Text('Created: ${wo.createdAt.day}-${_getMonth(wo.createdAt.month)}-${wo.createdAt.year} ${wo.createdAt.hour.toString().padLeft(2, '0')}:${wo.createdAt.minute.toString().padLeft(2, '0')}'),
+                                const SizedBox(height: 8),
+                                Text('Service Date: ${wo.serviceDate != null ? '${wo.serviceDate!.day}-${_getMonth(wo.serviceDate!.month)}-${wo.serviceDate!.year}' : 'N/A'}'),
+                                const SizedBox(height: 8),
+                                Text('Scheduled Time: ${wo.scheduledTime ?? 'N/A'}'),
+                                const SizedBox(height: 8),
+                                Text('Due Date: ${wo.dueDate != null ? '${wo.dueDate!.day}-${_getMonth(wo.dueDate!.month)}-${wo.dueDate!.year} ${wo.dueDate!.hour.toString().padLeft(2, '0')}:${wo.dueDate!.minute.toString().padLeft(2, '0')}' : 'N/A'}'),
+                                const SizedBox(height: 12),
+                                const Text('Services:', style: TextStyle(fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 6),
+                                ...wo.services.map((s) => Text('- $s')),
+                                const SizedBox(height: 12),
+                                const Text('Details:', style: TextStyle(fontWeight: FontWeight.bold)),
+                                const SizedBox(height: 6),
+                                Text(wo.details),
+                              ],
+                            ),
+                          ),
+                          actions: [
+                            TextButton(onPressed: () => Navigator.of(ctx).pop(), child: const Text('Close')),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                const Icon(Icons.location_on_outlined, size: 14, color: Colors.grey),
+                const SizedBox(width: 6),
+                Expanded(child: Text(wo.location, style: const TextStyle(fontSize: 13))),
+                const SizedBox(width: 12),
+                const Icon(Icons.calendar_today_outlined, size: 14, color: Colors.grey),
+                const SizedBox(width: 6),
+                Text(wo.dueDate != null ? '${wo.dueDate!.day} - ${_getMonth(wo.dueDate!.month)} - ${wo.dueDate!.year}' : 'N/A', style: const TextStyle(fontSize: 13)),
+              ],
+            ),
+            const SizedBox(height: 8),
+            const Divider(),
+          ],
+        ),
+      );
+    }
+
+    // Desktop / wide layout (table-style row)
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Row(
@@ -512,8 +684,7 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
                     padding: const EdgeInsets.only(left: 6.0),
                     child: Tooltip(
                       message: 'Critical priority',
-                      child: Icon(Icons.warning_amber_rounded,
-                          size: 16, color: Colors.red.shade700),
+                      child: Icon(Icons.warning_amber_rounded, size: 16, color: Colors.red.shade700),
                     ),
                   ),
               ],
@@ -641,16 +812,15 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
             ),
           ),
 
-          // Actions
+          // Actions (only view)
           SizedBox(
-            width: 80,
+            width: 72,
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Eye button: shows details dialog
                 IconButton(
                   padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
+                  constraints: BoxConstraints.tightFor(width: 28, height: 28),
                   icon: Icon(
                     Icons.remove_red_eye_outlined,
                     size: 18,
@@ -691,7 +861,7 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
                                 const SizedBox(height: 12),
                                 const Text('Services:', style: TextStyle(fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 6),
-                                ...wo.services.map((s) => Text('- $s')).toList(),
+                                ...wo.services.map((s) => Text('- $s')),
                                 const SizedBox(height: 12),
                                 const Text('Details:', style: TextStyle(fontWeight: FontWeight.bold)),
                                 const SizedBox(height: 6),
@@ -710,12 +880,6 @@ class _WorkOrdersListPageState extends State<WorkOrdersListPage> {
                     );
                   },
                 ),
-                const SizedBox(width: 8),
-                const Icon(
-                  Icons.edit_outlined,
-                  size: 18,
-                  color: Colors.cyan,
-                ), // Cyan/Blue Edit
               ],
             ),
           ),
